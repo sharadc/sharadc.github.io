@@ -3,13 +3,13 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
+title: Sharad's Blog
+subtitle: 'Ramdom Superpositions'
+description: 'Tech, Sci-fi, Poetry, Economics, Tidbits'
 keywords:
-author: John Doe
+author: Sharad Chole
 language: en
-timezone: ''
+timezone: 'PST'
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
