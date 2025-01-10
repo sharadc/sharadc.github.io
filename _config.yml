@@ -9,7 +9,7 @@ description: 'Tech, Sci-fi, Poetry, Economics, Tidbits'
 keywords:
 author: Sharad Chole
 language: en
-timezone: 'PST'
+timezone: PST8PDT
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
