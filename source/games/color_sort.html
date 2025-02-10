@@ -51,12 +51,9 @@
       justify-content: center;
       /* Include the border in the element’s dimensions */
       box-sizing: border-box;
-      transition: outline 0.2s;
+      transition: none;
     }
-    /* Highlight the slot using an outline (does not affect layout) */
-    .slot.highlight {
-      outline: 2px solid #ff9999; /* Light red outline */
-    }
+    /* (Highlighting removed) */
     /* Button container */
     #button-container {
       margin-top: 10px;
@@ -199,35 +196,11 @@
       const touch = e.touches[0];
       currentDragged.style.left = (touch.clientX - offsetX) + "px";
       currentDragged.style.top = (touch.clientY - offsetY) + "px";
-      
-      // Temporarily hide the dragged element so underlying targets can be detected.
-      currentDragged.style.display = "none";
-      let target = document.elementFromPoint(touch.clientX, touch.clientY);
-      currentDragged.style.display = "";
-      
-      // Remove highlight from all slots.
-      const slots = document.querySelectorAll('.slot');
-      slots.forEach(slot => slot.classList.remove('highlight'));
-      
-      if (target) {
-        // Walk up the DOM to check for a slot.
-        let slotElement = target;
-        while (slotElement && slotElement !== document.body) {
-          if (slotElement.classList && slotElement.classList.contains('slot')) {
-            slotElement.classList.add('highlight');
-            break;
-          }
-          slotElement = slotElement.parentElement;
-        }
-      }
+      // No highlighting code is added here.
     }
     
     function handleTouchEnd(e) {
       if (!currentDragged) return;
-      // Remove highlight from all slots.
-      const slots = document.querySelectorAll('.slot');
-      slots.forEach(slot => slot.classList.remove('highlight'));
-      
       const touch = e.changedTouches[0];
       // Temporarily hide the dragged element to detect drop target.
       currentDragged.style.display = "none";
