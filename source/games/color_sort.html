@@ -49,10 +49,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      /* Include the border in the element’s dimensions */
+      box-sizing: border-box;
+      /* A gentle transition for border color only */
       transition: border-color 0.2s;
     }
-    /* Highlight the slot without changing the background:
-       Only change the border to light red. */
+    /* Highlight the slot without changing its size or background:
+       Only change the border color to light red. */
     .slot.highlight {
       border-color: #ff9999;  /* Light red */
     }
