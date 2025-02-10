@@ -49,6 +49,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    /* Highlight a slot when a draggable color is over it */
+    .slot.highlight {
+      border-color: #f00;
+      background-color: #ffeeee;
     }
     /* Button container */
     #button-container {
@@ -142,7 +148,7 @@
         const row = Math.floor(index / numCols);
         const col = index % numCols;
         
-        // Right neighbor.
+        // Check right neighbor.
         if (col < numCols - 1) {
           const rightSlot = slots[index + 1];
           if (rightSlot && rightSlot.firstChild && rightSlot.firstChild.classList.contains('color')) {
@@ -153,7 +159,7 @@
             totalScore += cosineSimilarity(currentColor, [r2, g2, b2, a2]);
           }
         }
-        // Bottom neighbor.
+        // Check bottom neighbor.
         if (row < numRows - 1) {
           const bottomSlot = slots[index + numCols];
           if (bottomSlot && bottomSlot.firstChild && bottomSlot.firstChild.classList.contains('color')) {
@@ -181,7 +187,7 @@
       const rect = currentDragged.getBoundingClientRect();
       offsetX = touch.clientX - rect.left;
       offsetY = touch.clientY - rect.top;
-      // Make the element position fixed so it can follow the finger.
+      // Make the element follow the touch.
       currentDragged.style.position = "fixed";
       currentDragged.style.zIndex = "1000";
     }
@@ -192,16 +198,44 @@
       const touch = e.touches[0];
       currentDragged.style.left = (touch.clientX - offsetX) + "px";
       currentDragged.style.top = (touch.clientY - offsetY) + "px";
+      
+      // Temporarily hide the dragged element so we can detect underlying drop targets.
+      currentDragged.style.display = "none";
+      let target = document.elementFromPoint(touch.clientX, touch.clientY);
+      currentDragged.style.display = "";
+      
+      // Remove any existing highlight from all slots.
+      const slots = document.querySelectorAll('.slot');
+      slots.forEach(slot => slot.classList.remove('highlight'));
+      
+      if (target) {
+        // Walk up the DOM to see if the target (or one of its ancestors) is a slot.
+        let slotElement = target;
+        while (slotElement && slotElement !== document.body) {
+          if (slotElement.classList && slotElement.classList.contains('slot')) {
+            slotElement.classList.add('highlight');
+            break;
+          }
+          slotElement = slotElement.parentElement;
+        }
+      }
     }
     
     function handleTouchEnd(e) {
       if (!currentDragged) return;
+      // Remove highlight from all slots.
+      const slots = document.querySelectorAll('.slot');
+      slots.forEach(slot => slot.classList.remove('highlight'));
+      
       const touch = e.changedTouches[0];
+      // Temporarily hide the dragged element to detect the drop target.
+      currentDragged.style.display = "none";
       let dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-      // Walk up the DOM tree to find a valid drop target (slot or palette)
+      currentDragged.style.display = "";
+      
       let validTarget = null;
       while (dropTarget && dropTarget !== document.body) {
-        if (dropTarget.classList.contains('slot') || dropTarget.id === "color-palette") {
+        if (dropTarget.classList && (dropTarget.classList.contains('slot') || dropTarget.id === "color-palette")) {
           validTarget = dropTarget;
           break;
         }
@@ -212,17 +246,17 @@
         if (validTarget.id === "color-palette") {
           validTarget.appendChild(currentDragged);
         } else if (validTarget.classList.contains('slot')) {
-          // If the slot is occupied, return the existing color to the palette.
+          // If the slot is already occupied, return the existing color to the palette.
           if (validTarget.firstChild) {
             palette.appendChild(validTarget.firstChild);
           }
           validTarget.appendChild(currentDragged);
         }
       } else {
-        // No valid drop target found; return the element to the palette.
+        // No valid drop target found; return to the palette.
         palette.appendChild(currentDragged);
       }
-      // Reset styling.
+      // Reset the element's styling.
       currentDragged.style.position = "";
       currentDragged.style.zIndex = "";
       currentDragged.style.left = "";
