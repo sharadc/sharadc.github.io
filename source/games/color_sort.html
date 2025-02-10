@@ -51,13 +51,11 @@
       justify-content: center;
       /* Include the border in the element’s dimensions */
       box-sizing: border-box;
-      /* A gentle transition for border color only */
-      transition: border-color 0.2s;
+      transition: outline 0.2s;
     }
-    /* Highlight the slot without changing its size or background:
-       Only change the border color to light red. */
+    /* Highlight the slot using an outline (does not affect layout) */
     .slot.highlight {
-      border-color: #ff9999;  /* Light red */
+      outline: 2px solid #ff9999; /* Light red outline */
     }
     /* Button container */
     #button-container {
