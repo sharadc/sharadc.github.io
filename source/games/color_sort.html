@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Color Sorting Game - Mobile Friendly</title>
+  <title>Color Sorting Game - Mobile Friendly (RGB Only)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -53,7 +53,6 @@
       box-sizing: border-box;
       transition: none;
     }
-    /* (Highlighting removed) */
     /* Button container */
     #button-container {
       margin-top: 10px;
@@ -112,20 +111,19 @@
       return Math.floor(Math.random() * 256);
     }
     
-    // Generate a random RGBA color (alpha fixed at 255).
+    // Generate a random RGB color.
     function randomColor() {
       const r = randomInt();
       const g = randomInt();
       const b = randomInt();
-      const a = 255;
-      return [r, g, b, a];
+      return [r, g, b];
     }
     
-    // Compute cosine similarity between two 4D vectors.
+    // Compute cosine similarity between two 3D vectors.
     function cosineSimilarity(v1, v2) {
-      const dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] + v1[3]*v2[3];
-      const norm1 = Math.sqrt(v1[0]**2 + v1[1]**2 + v1[2]**2 + v1[3]**2);
-      const norm2 = Math.sqrt(v2[0]**2 + v2[1]**2 + v2[2]**2 + v2[3]**2);
+      const dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+      const norm1 = Math.sqrt(v1[0]**2 + v1[1]**2 + v1[2]**2);
+      const norm2 = Math.sqrt(v2[0]**2 + v2[1]**2 + v2[2]**2);
       if (norm1 === 0 || norm2 === 0) return 0;
       return dot / (norm1 * norm2);
     }
@@ -141,8 +139,7 @@
         const r = parseInt(slot.firstChild.getAttribute('data-r'));
         const g = parseInt(slot.firstChild.getAttribute('data-g'));
         const b = parseInt(slot.firstChild.getAttribute('data-b'));
-        const a = parseInt(slot.firstChild.getAttribute('data-a'));
-        const currentColor = [r, g, b, a];
+        const currentColor = [r, g, b];
         const row = Math.floor(index / numCols);
         const col = index % numCols;
         
@@ -153,8 +150,7 @@
             const r2 = parseInt(rightSlot.firstChild.getAttribute('data-r'));
             const g2 = parseInt(rightSlot.firstChild.getAttribute('data-g'));
             const b2 = parseInt(rightSlot.firstChild.getAttribute('data-b'));
-            const a2 = parseInt(rightSlot.firstChild.getAttribute('data-a'));
-            totalScore += cosineSimilarity(currentColor, [r2, g2, b2, a2]);
+            totalScore += cosineSimilarity(currentColor, [r2, g2, b2]);
           }
         }
         // Check bottom neighbor.
@@ -164,8 +160,7 @@
             const r2 = parseInt(bottomSlot.firstChild.getAttribute('data-r'));
             const g2 = parseInt(bottomSlot.firstChild.getAttribute('data-g'));
             const b2 = parseInt(bottomSlot.firstChild.getAttribute('data-b'));
-            const a2 = parseInt(bottomSlot.firstChild.getAttribute('data-a'));
-            totalScore += cosineSimilarity(currentColor, [r2, g2, b2, a2]);
+            totalScore += cosineSimilarity(currentColor, [r2, g2, b2]);
           }
         }
       });
@@ -196,7 +191,7 @@
       const touch = e.touches[0];
       currentDragged.style.left = (touch.clientX - offsetX) + "px";
       currentDragged.style.top = (touch.clientY - offsetY) + "px";
-      // No highlighting code is added here.
+      // No highlighting is done.
     }
     
     function handleTouchEnd(e) {
@@ -245,15 +240,14 @@
     }
     
     // --- Create Draggable Color Elements ---
-    function createColorElement(id, rgba) {
+    function createColorElement(id, rgb) {
       const colorDiv = document.createElement('div');
       colorDiv.classList.add('color');
       colorDiv.id = id;
-      colorDiv.setAttribute('data-r', rgba[0]);
-      colorDiv.setAttribute('data-g', rgba[1]);
-      colorDiv.setAttribute('data-b', rgba[2]);
-      colorDiv.setAttribute('data-a', rgba[3]);
-      colorDiv.style.backgroundColor = `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${rgba[3] / 255})`;
+      colorDiv.setAttribute('data-r', rgb[0]);
+      colorDiv.setAttribute('data-g', rgb[1]);
+      colorDiv.setAttribute('data-b', rgb[2]);
+      colorDiv.style.backgroundColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
       colorDiv.setAttribute('draggable', 'true');
       
       // Desktop drag support.
@@ -272,8 +266,8 @@
       const palette = document.getElementById('color-palette');
       palette.innerHTML = "";
       for (let i = 0; i < numColors; i++) {
-        const rgba = randomColor();
-        const colorDiv = createColorElement('color' + i, rgba);
+        const rgb = randomColor();
+        const colorDiv = createColorElement('color' + i, rgb);
         palette.appendChild(colorDiv);
       }
     }
@@ -381,23 +375,20 @@
         const r = parseInt(arr[i].getAttribute('data-r'));
         const g = parseInt(arr[i].getAttribute('data-g'));
         const b = parseInt(arr[i].getAttribute('data-b'));
-        const a = parseInt(arr[i].getAttribute('data-a'));
-        const currentColor = [r, g, b, a];
+        const currentColor = [r, g, b];
         const row = Math.floor(i / numCols);
         const col = i % numCols;
         if (col < numCols - 1) {
           const r2 = parseInt(arr[i+1].getAttribute('data-r'));
           const g2 = parseInt(arr[i+1].getAttribute('data-g'));
           const b2 = parseInt(arr[i+1].getAttribute('data-b'));
-          const a2 = parseInt(arr[i+1].getAttribute('data-a'));
-          score += cosineSimilarity(currentColor, [r2, g2, b2, a2]);
+          score += cosineSimilarity(currentColor, [r2, g2, b2]);
         }
         if (row < numRows - 1 && (i + numCols) < arr.length) {
           const r2 = parseInt(arr[i+numCols].getAttribute('data-r'));
           const g2 = parseInt(arr[i+numCols].getAttribute('data-g'));
           const b2 = parseInt(arr[i+numCols].getAttribute('data-b'));
-          const a2 = parseInt(arr[i+numCols].getAttribute('data-a'));
-          score += cosineSimilarity(currentColor, [r2, g2, b2, a2]);
+          score += cosineSimilarity(currentColor, [r2, g2, b2]);
         }
       }
       return score;
