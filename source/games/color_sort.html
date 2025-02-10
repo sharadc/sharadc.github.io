@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <!-- Ensure proper scaling on mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Color Sorting Game - Mobile Friendly (RGB Only)</title>
+  <title>Color Sorting Game - Mobile Friendly (Multiple Models)</title>
   <style>
     body {
       font-family: sans-serif;
@@ -15,6 +15,10 @@
     }
     /* Slider (grid size) styling */
     .slider-container {
+      margin-bottom: 20px;
+    }
+    /* Similarity model selection styling (drop-down) */
+    #modelContainer {
       margin-bottom: 20px;
     }
     /* Palette styling */
@@ -49,8 +53,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Include the border in the element’s dimensions */
-      box-sizing: border-box;
+      box-sizing: border-box; /* Include border in dimensions */
       transition: none;
     }
     /* Button container */
@@ -72,7 +75,23 @@
     </div>
   </div>
   
-  <!-- Buttons moved immediately after sliders -->
+  <!-- Similarity Model Selection Drop-Down -->
+  <div class="container" id="modelContainer">
+    <label for="similarityModel">Similarity Model:</label>
+    <select id="similarityModel">
+      <option value="RGB" selected>RGB (Cosine)</option>
+      <option value="HSV">HSV (Cosine)</option>
+      <option value="HSL">HSL (Cosine)</option>
+      <option value="YUV">YUV (Cosine)</option>
+      <option value="CMYK">CMYK (Cosine)</option>
+      <option value="XYZ">XYZ (Cosine)</option>
+      <option value="LAB">LAB (Cosine)</option>
+      <option value="LCH">LCH (Cosine)</option>
+      <option value="YIQ">YIQ (Cosine)</option>
+    </select>
+  </div>
+  
+  <!-- Buttons moved immediately after model selection -->
   <div class="container" id="button-container">
     <button id="rearrangeButton">Rearrange for Best Score</button>
     <button id="resetButton">Reset Game</button>
@@ -111,7 +130,7 @@
       return Math.floor(Math.random() * 256);
     }
     
-    // Generate a random RGB color.
+    // Generate a random RGB color (returns an array [r, g, b]).
     function randomColor() {
       const r = randomInt();
       const g = randomInt();
@@ -121,14 +140,172 @@
     
     // Compute cosine similarity between two 3D vectors.
     function cosineSimilarity(v1, v2) {
-      const dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-      const norm1 = Math.sqrt(v1[0]**2 + v1[1]**2 + v1[2]**2);
-      const norm2 = Math.sqrt(v2[0]**2 + v2[1]**2 + v2[2]**2);
+      const dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+      const norm1 = Math.sqrt(v1[0] ** 2 + v1[1] ** 2 + v1[2] ** 2);
+      const norm2 = Math.sqrt(v2[0] ** 2 + v2[1] ** 2 + v2[2] ** 2);
       if (norm1 === 0 || norm2 === 0) return 0;
       return dot / (norm1 * norm2);
     }
     
-    // Compute the total score by summing cosine similarities between adjacent colors.
+    // --- Conversion Functions ---
+    // Convert RGB to HSV (each component in [0,1]).
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const d = max - min;
+      let h = 0, s = (max === 0 ? 0 : d / max), v = max;
+      if (max !== min) {
+        if (max === r) {
+          h = ((g - b) / d) % 6;
+        } else if (max === g) {
+          h = (b - r) / d + 2;
+        } else {
+          h = (r - g) / d + 4;
+        }
+        h = (h * 60) / 360;  // Scale h to [0,1]
+      }
+      return [h, s, v];
+    }
+    
+    // Convert RGB to HSL (each component in [0,1]).
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) {
+        h = s = 0; // achromatic
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d) + (g < b ? 6 : 0); break;
+          case g: h = ((b - r) / d) + 2; break;
+          case b: h = ((r - g) / d) + 4; break;
+        }
+        h /= 6;
+      }
+      return [h, s, l];
+    }
+    
+    // Convert RGB to YUV.
+    function rgbToYuv(r, g, b) {
+      const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+      const U = -0.14713 * r - 0.28886 * g + 0.436 * b;
+      const V = 0.615 * r - 0.51499 * g - 0.10001 * b;
+      return [Y, U, V];
+    }
+    
+    // Convert RGB to CMYK.
+    function rgbToCmyk(r, g, b) {
+      const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+      let C = 1 - rNorm;
+      let M = 1 - gNorm;
+      let Y = 1 - bNorm;
+      const K = Math.min(C, M, Y);
+      if (K === 1) return [0, 0, 0];
+      return [(C - K) / (1 - K), (M - K) / (1 - K), (Y - K) / (1 - K)];
+    }
+    
+    // Convert RGB to XYZ.
+    function rgbToXyz(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      function toLinear(c) {
+        return c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+      }
+      r = toLinear(r); g = toLinear(g); b = toLinear(b);
+      const X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+      const Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+      const Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+      return [X, Y, Z];
+    }
+    
+    // Convert XYZ to LAB.
+    function xyzToLab(x, y, z) {
+      // D65 reference white point
+      const refX = 0.95047, refY = 1.00000, refZ = 1.08883;
+      x /= refX; y /= refY; z /= refZ;
+      function f(t) {
+        return t > 0.008856 ? Math.pow(t, 1/3) : (7.787 * t) + (16/116);
+      }
+      const L = (116 * f(y)) - 16;
+      const a = 500 * (f(x) - f(y));
+      const b = 200 * (f(y) - f(z));
+      return [L, a, b];
+    }
+    
+    // Convert RGB to LAB.
+    function rgbToLab(r, g, b) {
+      const xyz = rgbToXyz(r, g, b);
+      return xyzToLab(xyz[0], xyz[1], xyz[2]);
+    }
+    
+    // Convert LAB to LCH.
+    function labToLch(L, a, b) {
+      const C = Math.sqrt(a * a + b * b);
+      let h = Math.atan2(b, a) * (180 / Math.PI);
+      if (h < 0) h += 360;
+      return [L, C, h];
+    }
+    
+    // Convert RGB to LCH.
+    function rgbToLch(r, g, b) {
+      const lab = rgbToLab(r, g, b);
+      return labToLch(lab[0], lab[1], lab[2]);
+    }
+    
+    // Convert RGB to YIQ.
+    function rgbToYiq(r, g, b) {
+      const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+      const I = 0.596 * r - 0.274 * g - 0.322 * b;
+      const Q = 0.211 * r - 0.523 * g + 0.312 * b;
+      return [Y, I, Q];
+    }
+    
+    // Compute similarity between two colors using the selected model.
+    // Each color is an array [r, g, b] with values in [0,255].
+    function computeSimilarity(c1, c2) {
+      const model = document.getElementById('similarityModel').value;
+      if (model === "RGB") {
+        return cosineSimilarity(c1, c2);
+      } else if (model === "HSV") {
+        const hsv1 = rgbToHsv(c1[0], c1[1], c1[2]);
+        const hsv2 = rgbToHsv(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(hsv1, hsv2);
+      } else if (model === "HSL") {
+        const hsl1 = rgbToHsl(c1[0], c1[1], c1[2]);
+        const hsl2 = rgbToHsl(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(hsl1, hsl2);
+      } else if (model === "YUV") {
+        const yuv1 = rgbToYuv(c1[0], c1[1], c1[2]);
+        const yuv2 = rgbToYuv(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(yuv1, yuv2);
+      } else if (model === "CMYK") {
+        const cmyk1 = rgbToCmyk(c1[0], c1[1], c1[2]);
+        const cmyk2 = rgbToCmyk(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(cmyk1, cmyk2);
+      } else if (model === "XYZ") {
+        const xyz1 = rgbToXyz(c1[0], c1[1], c1[2]);
+        const xyz2 = rgbToXyz(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(xyz1, xyz2);
+      } else if (model === "LAB") {
+        const lab1 = rgbToLab(c1[0], c1[1], c1[2]);
+        const lab2 = rgbToLab(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(lab1, lab2);
+      } else if (model === "LCH") {
+        const lch1 = rgbToLch(c1[0], c1[1], c1[2]);
+        const lch2 = rgbToLch(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(lch1, lch2);
+      } else if (model === "YIQ") {
+        const yiq1 = rgbToYiq(c1[0], c1[1], c1[2]);
+        const yiq2 = rgbToYiq(c2[0], c2[1], c2[2]);
+        return cosineSimilarity(yiq1, yiq2);
+      }
+      return cosineSimilarity(c1, c2);
+    }
+    
+    // Compute the total score by summing similarities between adjacent colors in the grid.
     function computeScore() {
       const grid = document.getElementById('color-grid');
       const slots = Array.from(grid.children);
@@ -150,7 +327,7 @@
             const r2 = parseInt(rightSlot.firstChild.getAttribute('data-r'));
             const g2 = parseInt(rightSlot.firstChild.getAttribute('data-g'));
             const b2 = parseInt(rightSlot.firstChild.getAttribute('data-b'));
-            totalScore += cosineSimilarity(currentColor, [r2, g2, b2]);
+            totalScore += computeSimilarity(currentColor, [r2, g2, b2]);
           }
         }
         // Check bottom neighbor.
@@ -160,7 +337,7 @@
             const r2 = parseInt(bottomSlot.firstChild.getAttribute('data-r'));
             const g2 = parseInt(bottomSlot.firstChild.getAttribute('data-g'));
             const b2 = parseInt(bottomSlot.firstChild.getAttribute('data-b'));
-            totalScore += cosineSimilarity(currentColor, [r2, g2, b2]);
+            totalScore += computeSimilarity(currentColor, [r2, g2, b2]);
           }
         }
       });
@@ -191,7 +368,7 @@
       const touch = e.touches[0];
       currentDragged.style.left = (touch.clientX - offsetX) + "px";
       currentDragged.style.top = (touch.clientY - offsetY) + "px";
-      // No highlighting is done.
+      // No highlighting is performed.
     }
     
     function handleTouchEnd(e) {
@@ -379,16 +556,16 @@
         const row = Math.floor(i / numCols);
         const col = i % numCols;
         if (col < numCols - 1) {
-          const r2 = parseInt(arr[i+1].getAttribute('data-r'));
-          const g2 = parseInt(arr[i+1].getAttribute('data-g'));
-          const b2 = parseInt(arr[i+1].getAttribute('data-b'));
-          score += cosineSimilarity(currentColor, [r2, g2, b2]);
+          const r2 = parseInt(arr[i + 1].getAttribute('data-r'));
+          const g2 = parseInt(arr[i + 1].getAttribute('data-g'));
+          const b2 = parseInt(arr[i + 1].getAttribute('data-b'));
+          score += computeSimilarity(currentColor, [r2, g2, b2]);
         }
         if (row < numRows - 1 && (i + numCols) < arr.length) {
-          const r2 = parseInt(arr[i+numCols].getAttribute('data-r'));
-          const g2 = parseInt(arr[i+numCols].getAttribute('data-g'));
-          const b2 = parseInt(arr[i+numCols].getAttribute('data-b'));
-          score += cosineSimilarity(currentColor, [r2, g2, b2]);
+          const r2 = parseInt(arr[i + numCols].getAttribute('data-r'));
+          const g2 = parseInt(arr[i + numCols].getAttribute('data-g'));
+          const b2 = parseInt(arr[i + numCols].getAttribute('data-b'));
+          score += computeSimilarity(currentColor, [r2, g2, b2]);
         }
       }
       return score;
