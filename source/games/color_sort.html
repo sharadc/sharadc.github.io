@@ -36,9 +36,8 @@
     /* Grid styling: grid-template-columns will be updated dynamically */
     #color-grid {
       display: grid;
-      grid-gap: 20px;
+      grid-gap: 10px;
       padding: 10px;
-      padding-right: 20px;
       border: 2px dashed #aaa;
       width: max-content;
     }
@@ -50,14 +49,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* A gentle transition for color changes (does not move the slot) */
       transition: border-color 0.2s;
     }
-    /* Highlight the slot without moving it:
-       Change the border to light red and the background to light cream. */
+    /* Highlight the slot without changing the background:
+       Only change the border to light red. */
     .slot.highlight {
-      border-color: #ff9999;       /* Light red */
-      padding: 0px;
+      border-color: #ff9999;  /* Light red */
     }
     /* Button container */
     #button-container {
@@ -310,7 +307,8 @@
     function setupGrid() {
       const grid = document.getElementById('color-grid');
       grid.innerHTML = "";
-      grid.style.gridTemplateColumns = `repeat(${numCols}, 60px)`;
+      // Update grid columns to 70px each.
+      grid.style.gridTemplateColumns = `repeat(${numCols}, 70px)`;
       for (let i = 0; i < numColors; i++) {
         const slot = document.createElement('div');
         slot.classList.add('slot');
