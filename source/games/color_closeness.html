@@ -23,11 +23,11 @@
     .game-container {
       position: relative;
       width: 100%;
-      height: 50%;  /* Adjust height as needed */
+      height: 70%;  /* Adjust height as needed */
     }
     /* Middle circle remains centered initially */
     .middle {
-      position: absolute;
+      position: relative;
       width: 100px;
       height: 100px;
       border-radius: 50%;
@@ -69,6 +69,7 @@
       top: 0;
       width: 50%;
       height: 100%;
+      min-height: 100px;
       cursor: pointer;
     }
   </style>
@@ -80,6 +81,7 @@
       top: 0;
       width: 50%;
       height: 100%;
+      min-height: 100px;
       cursor: pointer;
     }
   </style>
@@ -568,15 +570,14 @@
       b = Math.min(255, Math.max(0, b));
       return { r, g, b };
     }
-    // "Close Sides": Left and right colors are generated from a common base with low variation; middle is random.
+    // "Close Sides": Left and right colors are generated from a common base (low variation); middle is random.
     function generateCloseSides(round) {
       const base = getRandomColor();
       let leftCol = lowContrastColor(base, round);
       let rightCol = lowContrastColor(base, round);
       return { left: leftCol, right: rightCol };
     }
-    // "High Contrast": Left and right are forced to be very different,
-    // and the middle color is computed as their average with slight noise.
+    // "High Contrast": Left and right are forced to be very different; middle is average of the two plus slight noise.
     function generateHighContrast(round) {
       let leftCol = getRandomColor();
       let rightCol = { 
@@ -627,6 +628,7 @@
       leftDiv.style.backgroundColor = rgbToString(leftColor);
       rightDiv.style.backgroundColor = rgbToString(rightColor);
       middleDiv.style.backgroundColor = rgbToString(middleColor);
+      // Reset the middle circle to the center.
       middleDiv.style.left = "calc(50% - 50px)";
       middleDiv.style.top = "calc(50% - 50px)";
     }
@@ -654,56 +656,56 @@
       let dChosen, dOther;
       if (metric === "Euclidean") {
         let hueIndices = [];
-        if(model === "HSV") hueIndices.push(0);
-        if(model === "LCH") hueIndices.push(2);
+        if (model === "HSV") hueIndices.push(0);
+        if (model === "LCH") hueIndices.push(2);
         dChosen = euclideanDistance(chosenVec, middleVec, hueIndices);
         dOther  = euclideanDistance(otherVec, middleVec, hueIndices);
       } else if (metric === "Manhattan") {
         let hueIndices = [];
-        if(model === "HSV") hueIndices.push(0);
-        if(model === "LCH") hueIndices.push(2);
+        if (model === "HSV") hueIndices.push(0);
+        if (model === "LCH") hueIndices.push(2);
         dChosen = manhattanDistance(chosenVec, middleVec, hueIndices);
         dOther  = manhattanDistance(otherVec, middleVec, hueIndices);
       } else if (metric === "Cosine") {
         dChosen = cosineDistance(chosenVec, middleVec);
         dOther  = cosineDistance(otherVec, middleVec);
       } else if (metric === "CIEDE2000") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
         dChosen = ciede2000(labMiddle, labChosen);
         dOther  = ciede2000(labMiddle, labOther);
       } else if (metric === "ΔE76") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
         dChosen = deltaE76(labMiddle, labChosen);
         dOther  = deltaE76(labMiddle, labOther);
       } else if (metric === "ΔE94") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
         dChosen = deltaE94(labMiddle, labChosen);
         dOther  = deltaE94(labMiddle, labOther);
       } else if (metric === "CAM02-UCS") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
         dChosen = deltaE_CAM02UCS(labMiddle, labChosen);
         dOther  = deltaE_CAM02UCS(labMiddle, labOther);
       } else if (metric === "DIN99") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
         dChosen = deltaE_DIN99(labMiddle, labChosen);
         dOther  = deltaE_DIN99(labMiddle, labOther);
       } else if (metric === "CMC l:c") {
-        if(model !== "LAB" && model !== "LCH") return;
+        if (model !== "LAB" && model !== "LCH") return;
         const labMiddle = getLabFromVector(model, middleVec);
         const labChosen = getLabFromVector(model, chosenVec);
         const labOther  = getLabFromVector(model, otherVec);
