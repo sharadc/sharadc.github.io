@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extended Color Distance Game – Progressive Difficulty & Highlight Highest Scores</title>
+  <style>
+    /* Basic reset and layout */
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-family: sans-serif;
+    }
+    .game-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+    }
+    .side {
+      flex: 1;
+      cursor: pointer;
+    }
+    .side:hover {
+      opacity: 0.9;
+    }
+    .middle {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      left: calc(50% - 50px);
+      top: calc(50% - 50px);
+      z-index: 10;
+      cursor: pointer;
+    }
+    /* Score table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.9em;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+    }
+    /* Gray out cells where a metric isn’t applicable */
+    .na {
+      background-color: #eee;
+      color: #888;
+    }
+    /* Status bar for round and strategy info */
+    #status {
+      padding: 4px;
+      background: #f0f0f0;
+      text-align: center;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Game Area -->
+  <div class="game-container">
+    <div id="left" class="side"></div>
+    <div id="right" class="side"></div>
+    <div id="middle" class="middle"></div>
+  </div>
+
+  <!-- Status (current round and strategy) -->
+  <div id="status">Round: 0 | Strategy: none</div>
+
+  <!-- Score Table -->
+  <table id="score-table">
+    <thead>
+      <tr>
+        <th>Color Model</th>
+        <th>Euclidean</th>
+        <th>Manhattan</th>
+        <th>Cosine</th>
+        <th>CIEDE2000</th>
+        <th>ΔE₇₆</th>
+        <th>ΔE₉₄</th>
+        <th>CAM02‑UCS</th>
+        <th>DIN99</th>
+        <th>CMC l:c</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>RGB</td>
+        <td id="score-RGB-Euclidean">0</td>
+        <td id="score-RGB-Manhattan">0</td>
+        <td id="score-RGB-Cosine">0</td>
+        <td id="score-RGB-CIEDE2000" class="na">N/A</td>
+        <td id="score-RGB-ΔE76" class="na">N/A</td>
+        <td id="score-RGB-ΔE94" class="na">N/A</td>
+        <td id="score-RGB-CAM02-UCS" class="na">N/A</td>
+        <td id="score-RGB-DIN99" class="na">N/A</td>
+        <td id="score-RGB-CMC l:c" class="na">N/A</td>
+      </tr>
+      <tr>
+        <td>HSV</td>
+        <td id="score-HSV-Euclidean">0</td>
+        <td id="score-HSV-Manhattan">0</td>
+        <td id="score-HSV-Cosine">0</td>
+        <td id="score-HSV-CIEDE2000" class="na">N/A</td>
+        <td id="score-HSV-ΔE76" class="na">N/A</td>
+        <td id="score-HSV-ΔE94" class="na">N/A</td>
+        <td id="score-HSV-CAM02-UCS" class="na">N/A</td>
+        <td id="score-HSV-DIN99" class="na">N/A</td>
+        <td id="score-HSV-CMC l:c" class="na">N/A</td>
+      </tr>
+      <tr>
+        <td>YUV</td>
+        <td id="score-YUV-Euclidean">0</td>
+        <td id="score-YUV-Manhattan">0</td>
+        <td id="score-YUV-Cosine">0</td>
+        <td id="score-YUV-CIEDE2000" class="na">N/A</td>
+        <td id="score-YUV-ΔE76" class="na">N/A</td>
+        <td id="score-YUV-ΔE94" class="na">N/A</td>
+        <td id="score-YUV-CAM02-UCS" class="na">N/A</td>
+        <td id="score-YUV-DIN99" class="na">N/A</td>
+        <td id="score-YUV-CMC l:c" class="na">N/A</td>
+      </tr>
+      <tr>
+        <td>CMYK</td>
+        <td id="score-CMYK-Euclidean">0</td>
+        <td id="score-CMYK-Manhattan">0</td>
+        <td id="score-CMYK-Cosine">0</td>
+        <td id="score-CMYK-CIEDE2000" class="na">N/A</td>
+        <td id="score-CMYK-ΔE76" class="na">N/A</td>
+        <td id="score-CMYK-ΔE94" class="na">N/A</td>
+        <td id="score-CMYK-CAM02-UCS" class="na">N/A</td>
+        <td id="score-CMYK-DIN99" class="na">N/A</td>
+        <td id="score-CMYK-CMC l:c" class="na">N/A</td>
+      </tr>
+      <tr>
+        <td>XYZ</td>
+        <td id="score-XYZ-Euclidean">0</td>
+        <td id="score-XYZ-Manhattan">0</td>
+        <td id="score-XYZ-Cosine">0</td>
+        <td id="score-XYZ-CIEDE2000" class="na">N/A</td>
+        <td id="score-XYZ-ΔE76" class="na">N/A</td>
+        <td id="score-XYZ-ΔE94" class="na">N/A</td>
+        <td id="score-XYZ-CAM02-UCS" class="na">N/A</td>
+        <td id="score-XYZ-DIN99" class="na">N/A</td>
+        <td id="score-XYZ-CMC l:c" class="na">N/A</td>
+      </tr>
+      <tr>
+        <td>LAB</td>
+        <td id="score-LAB-Euclidean">0</td>
+        <td id="score-LAB-Manhattan">0</td>
+        <td id="score-LAB-Cosine">0</td>
+        <td id="score-LAB-CIEDE2000">0</td>
+        <td id="score-LAB-ΔE76">0</td>
+        <td id="score-LAB-ΔE94">0</td>
+        <td id="score-LAB-CAM02-UCS">0</td>
+        <td id="score-LAB-DIN99">0</td>
+        <td id="score-LAB-CMC l:c">0</td>
+      </tr>
+      <tr>
+        <td>LCH</td>
+        <td id="score-LCH-Euclidean">0</td>
+        <td id="score-LCH-Manhattan">0</td>
+        <td id="score-LCH-Cosine">0</td>
+        <td id="score-LCH-CIEDE2000">0</td>
+        <td id="score-LCH-ΔE76">0</td>
+        <td id="score-LCH-ΔE94">0</td>
+        <td id="score-LCH-CAM02-UCS">0</td>
+        <td id="score-LCH-DIN99">0</td>
+        <td id="score-LCH-CMC l:c">0</td>
+      </tr>
+      <tr>
+        <td>YIQ</td>
+        <td id="score-YIQ-Euclidean">0</td>
+        <td id="score-YIQ-Manhattan">0</td>
+        <td id="score-YIQ-Cosine">0</td>
+        <td id="score-YIQ-CIEDE2000" class="na">N/A</td>
+        <td id="score-YIQ-ΔE76" class="na">N/A</td>
+        <td id="score-YIQ-ΔE94" class="na">N/A</td>
+        <td id="score-YIQ-CAM02-UCS" class="na">N/A</td>
+        <td id="score-YIQ-DIN99" class="na">N/A</td>
+        <td id="score-YIQ-CMC l:c" class="na">N/A</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    /*********************
+     * Global Variables
+     *********************/
+    // Supported color models and distance metrics.
+    const models = ["RGB", "HSV", "YUV", "CMYK", "XYZ", "LAB", "LCH", "YIQ"];
+    const metrics = [
+      "Euclidean", "Manhattan", "Cosine", "CIEDE2000",
+      "ΔE76", "ΔE94", "CAM02-UCS", "DIN99", "CMC l:c"
+    ];
+
+    // Scores: for each model and metric.
+    let scores = {
+      "RGB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "HSV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "YUV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "CMYK":  { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "XYZ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "LAB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "LCH":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "YIQ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
+                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 }
+    };
+
+    // Current colors (in RGB).
+    let leftColor, rightColor, middleColor;
+
+    // Global round counter and current strategy.
+    let round = 0;
+    let currentStrategy = "none";
+    // Strategies: "lowContrast", "colorNoise", "closeSides", "highContrast", "none"
+    const strategies = ["lowContrast", "colorNoise", "closeSides", "highContrast", "none"];
+
+    // DOM Elements.
+    const leftDiv = document.getElementById("left");
+    const rightDiv = document.getElementById("right");
+    const middleDiv = document.getElementById("middle");
+    const statusDiv = document.getElementById("status");
+
+    /*********************
+     * Utility Functions
+     *********************/
+    function getRandomColor() {
+      return {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256)
+      };
+    }
+    function rgbToString(c) {
+      return `rgb(${c.r}, ${c.g}, ${c.b})`;
+    }
+    function randomOffset(max) {
+      return Math.floor(Math.random() * (2 * max + 1)) - max;
+    }
+
+    /******************************
+     * Color Conversion Functions
+     ******************************/
+    function rgbToHSV(rgb) {
+      let r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let delta = max - min;
+      let h = 0;
+      if (delta !== 0) {
+        if (max === r) {
+          h = 60 * (((g - b) / delta) % 6);
+        } else if (max === g) {
+          h = 60 * (((b - r) / delta) + 2);
+        } else {
+          h = 60 * (((r - g) / delta) + 4);
+        }
+      }
+      if (h < 0) h += 360;
+      let s = max === 0 ? 0 : delta / max;
+      let v = max;
+      return [h, s * 100, v * 100];
+    }
+    function rgbToYUV(rgb) {
+      const { r, g, b } = rgb;
+      const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+      const U = -0.14713 * r - 0.28886 * g + 0.436 * b;
+      const V = 0.615 * r - 0.51499 * g - 0.10001 * b;
+      return [Y, U, V];
+    }
+    function rgbToCMYK(rgb) {
+      let r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
+      let K = 1 - Math.max(r, g, b);
+      if (K === 1) return [0, 0, 0, 1];
+      let C = (1 - r - K) / (1 - K);
+      let M = (1 - g - K) / (1 - K);
+      let Y = (1 - b - K) / (1 - K);
+      return [C, M, Y, K];
+    }
+    function rgbToXYZ(rgb) {
+      let r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
+      r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+      g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+      b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+      r *= 100; g *= 100; b *= 100;
+      const X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+      const Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+      const Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+      return [X, Y, Z];
+    }
+    function rgbToLab(rgb) {
+      let r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255;
+      r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+      g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+      b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+      r *= 100; g *= 100; b *= 100;
+      let X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+      let Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+      let Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+      const refX = 95.047, refY = 100.000, refZ = 108.883;
+      let x = X / refX, y = Y / refY, z = Z / refZ;
+      function f(t) { return t > 0.008856 ? Math.pow(t, 1/3) : (7.787 * t + 16/116); }
+      const L = (116 * f(y)) - 16;
+      const a = 500 * (f(x) - f(y));
+      const bVal = 200 * (f(y) - f(z));
+      return [L, a, bVal];
+    }
+    function rgbToLCH(rgb) {
+      const lab = rgbToLab(rgb);
+      const L = lab[0], a = lab[1], b = lab[2];
+      const C = Math.sqrt(a * a + b * b);
+      let h = Math.atan2(b, a) * 180 / Math.PI;
+      if (h < 0) h += 360;
+      return [L, C, h];
+    }
+    function rgbToYIQ(rgb) {
+      const { r, g, b } = rgb;
+      const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+      const I = 0.596 * r - 0.274 * g - 0.322 * b;
+      const Q = 0.211 * r - 0.523 * g + 0.312 * b;
+      return [Y, I, Q];
+    }
+    function convertColor(rgb, model) {
+      switch(model) {
+        case "RGB":  return [rgb.r, rgb.g, rgb.b];
+        case "HSV":  return rgbToHSV(rgb);
+        case "YUV":  return rgbToYUV(rgb);
+        case "CMYK": return rgbToCMYK(rgb);
+        case "XYZ":  return rgbToXYZ(rgb);
+        case "LAB":  return rgbToLab(rgb);
+        case "LCH":  return rgbToLCH(rgb);
+        case "YIQ":  return rgbToYIQ(rgb);
+        default: return [];
+      }
+    }
+    function getLabFromVector(model, vec) {
+      if (model === "LAB") {
+        return { L: vec[0], a: vec[1], b: vec[2] };
+      } else if (model === "LCH") {
+        return lchToLab(vec);
+      } else {
+        return null;
+      }
+    }
+    function lchToLab(lch) {
+      let L = lch[0], C = lch[1], h = lch[2] * Math.PI/180;
+      return { L: L, a: C * Math.cos(h), b: C * Math.sin(h) };
+    }
+
+    /**********************************
+     * Distance Functions (Metrics)
+     **********************************/
+    function euclideanDistance(v1, v2, hueIndices = []) {
+      let sum = 0;
+      for (let i = 0; i < v1.length; i++) {
+        let diff = v1[i] - v2[i];
+        if (hueIndices.includes(i)) {
+          diff = Math.abs(diff);
+          if (diff > 180) diff = 360 - diff;
+        }
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    }
+    function manhattanDistance(v1, v2, hueIndices = []) {
+      let sum = 0;
+      for (let i = 0; i < v1.length; i++) {
+        let diff = Math.abs(v1[i] - v2[i]);
+        if (hueIndices.includes(i) && diff > 180) {
+          diff = 360 - diff;
+        }
+        sum += diff;
+      }
+      return sum;
+    }
+    function cosineDistance(v1, v2) {
+      let dot = 0, norm1 = 0, norm2 = 0;
+      for (let i = 0; i < v1.length; i++) {
+        dot += v1[i] * v2[i];
+        norm1 += v1[i] * v1[i];
+        norm2 += v2[i] * v2[i];
+      }
+      if (norm1 === 0 || norm2 === 0) return 1;
+      return 1 - (dot / (Math.sqrt(norm1) * Math.sqrt(norm2)));
+    }
+    function ciede2000(lab1, lab2) {
+      const L1 = lab1.L, a1 = lab1.a, b1 = lab1.b;
+      const L2 = lab2.L, a2 = lab2.a, b2 = lab2.b;
+      const avg_L = (L1 + L2) / 2;
+      const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+      const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+      const avg_C = (C1 + C2) / 2;
+      const pow25_7 = Math.pow(25, 7);
+      const G = 0.5 * (1 - Math.sqrt(Math.pow(avg_C, 7) / (Math.pow(avg_C, 7) + pow25_7)));
+      const a1_prime = (1 + G) * a1;
+      const a2_prime = (1 + G) * a2;
+      const C1_prime = Math.sqrt(a1_prime * a1_prime + b1 * b1);
+      const C2_prime = Math.sqrt(a2_prime * a2_prime + b2 * b2);
+      let h1_prime = Math.atan2(b1, a1_prime) * 180 / Math.PI;
+      if (h1_prime < 0) h1_prime += 360;
+      let h2_prime = Math.atan2(b2, a2_prime) * 180 / Math.PI;
+      if (h2_prime < 0) h2_prime += 360;
+      const delta_L_prime = L2 - L1;
+      const delta_C_prime = C2_prime - C1_prime;
+      let deltah_prime = 0;
+      if (C1_prime * C2_prime !== 0) {
+        if (Math.abs(h2_prime - h1_prime) <= 180) {
+          deltah_prime = h2_prime - h1_prime;
+        } else if (h2_prime - h1_prime > 180) {
+          deltah_prime = h2_prime - h1_prime - 360;
+        } else {
+          deltah_prime = h2_prime - h1_prime + 360;
+        }
+      }
+      const delta_H_prime = 2 * Math.sqrt(C1_prime * C2_prime) * Math.sin((deltah_prime * Math.PI/180) / 2);
+      const avg_L_prime = (L1 + L2) / 2;
+      const avg_C_prime = (C1_prime + C2_prime) / 2;
+      let avg_h_prime = 0;
+      if (C1_prime * C2_prime !== 0) {
+        if (Math.abs(h1_prime - h2_prime) <= 180) {
+          avg_h_prime = (h1_prime + h2_prime) / 2;
+        } else {
+          avg_h_prime = (h1_prime + h2_prime < 360) ?
+                        (h1_prime + h2_prime + 360) / 2 :
+                        (h1_prime + h2_prime - 360) / 2;
+        }
+      }
+      const T = 1 -
+                0.17 * Math.cos((avg_h_prime - 30) * Math.PI/180) +
+                0.24 * Math.cos(2 * avg_h_prime * Math.PI/180) +
+                0.32 * Math.cos((3 * avg_h_prime + 6) * Math.PI/180) -
+                0.20 * Math.cos((4 * avg_h_prime - 63) * Math.PI/180);
+      const delta_theta = 30 * Math.exp(-Math.pow((avg_h_prime - 275) / 25, 2));
+      const R_C = 2 * Math.sqrt(Math.pow(avg_C_prime, 7) / (Math.pow(avg_C_prime, 7) + pow25_7));
+      const S_L = 1 + (0.015 * Math.pow(avg_L_prime - 50, 2)) / Math.sqrt(20 + Math.pow(avg_L_prime - 50, 2));
+      const S_C = 1 + 0.045 * avg_C_prime;
+      const S_H = 1 + 0.015 * avg_C_prime * T;
+      const R_T = -Math.sin(2 * delta_theta * Math.PI/180) * R_C;
+      const deltaE = Math.sqrt(
+        Math.pow(delta_L_prime / S_L, 2) +
+        Math.pow(delta_C_prime / S_C, 2) +
+        Math.pow(delta_H_prime / S_H, 2) +
+        R_T * (delta_C_prime / S_C) * (delta_H_prime / S_H)
+      );
+      return deltaE;
+    }
+    function deltaE76(lab1, lab2) {
+      return Math.sqrt(
+        Math.pow(lab1.L - lab2.L, 2) +
+        Math.pow(lab1.a - lab2.a, 2) +
+        Math.pow(lab1.b - lab2.b, 2)
+      );
+    }
+    function deltaE94(lab1, lab2) {
+      let kL = 1, kC = 1, kH = 1;
+      let K1 = 0.045, K2 = 0.015;
+      let deltaL = lab1.L - lab2.L;
+      let C1 = Math.sqrt(lab1.a * lab1.a + lab1.b * lab1.b);
+      let C2 = Math.sqrt(lab2.a * lab2.a + lab2.b * lab2.b);
+      let deltaC = C1 - C2;
+      let deltaA = lab1.a - lab2.a;
+      let deltaB = lab1.b - lab2.b;
+      let deltaH_sq = deltaA * deltaA + deltaB * deltaB - deltaC * deltaC;
+      deltaH_sq = deltaH_sq < 0 ? 0 : deltaH_sq;
+      let deltaH = Math.sqrt(deltaH_sq);
+      let SL = 1;
+      let SC = 1 + K1 * C1;
+      let SH = 1 + K2 * C1;
+      let termL = deltaL / (kL * SL);
+      let termC = deltaC / (kC * SC);
+      let termH = deltaH / (kH * SH);
+      return Math.sqrt(termL * termL + termC * termC + termH * termH);
+    }
+    function labToCAM02UCS(lab) {
+      let Jp = 1.7 * Math.log(1 + lab.L / 100);
+      let ap = lab.a * 0.007;
+      let bp = lab.b * 0.007;
+      return { Jp, ap, bp };
+    }
+    function deltaE_CAM02UCS(lab1, lab2) {
+      const cam1 = labToCAM02UCS(lab1);
+      const cam2 = labToCAM02UCS(lab2);
+      return Math.sqrt(
+        Math.pow(cam1.Jp - cam2.Jp, 2) +
+        Math.pow(cam1.ap - cam2.ap, 2) +
+        Math.pow(cam1.bp - cam2.bp, 2)
+      );
+    }
+    function DIN99(lab) {
+      const L99 = 105.51 * Math.log(1 + 0.0158 * lab.L);
+      const a99 = lab.a * 0.73;
+      const b99 = lab.b * 0.73;
+      return [L99, a99, b99];
+    }
+    function deltaE_DIN99(lab1, lab2) {
+      const din1 = DIN99(lab1);
+      const din2 = DIN99(lab2);
+      return Math.sqrt(
+        Math.pow(din1[0] - din2[0], 2) +
+        Math.pow(din1[1] - din2[1], 2) +
+        Math.pow(din1[2] - din2[2], 2)
+      );
+    }
+    function deltaE_CMC(lab1, lab2, lWeight = 2, cWeight = 1) {
+      const deltaL = lab1.L - lab2.L;
+      const C1 = Math.sqrt(lab1.a * lab1.a + lab1.b * lab1.b);
+      const C2 = Math.sqrt(lab2.a * lab2.a + lab2.b * lab2.b);
+      const deltaC = C1 - C2;
+      const deltaA = lab1.a - lab2.a;
+      const deltaB = lab1.b - lab2.b;
+      let deltaH_sq = deltaA * deltaA + deltaB * deltaB - deltaC * deltaC;
+      if (deltaH_sq < 0) deltaH_sq = 0;
+      const deltaH = Math.sqrt(deltaH_sq);
+      const SL = lab1.L < 16 ? 0.511 : (0.040975 * lab1.L) / (1 + 0.01765 * lab1.L);
+      const SC = (0.0638 * C1) / (1 + 0.0131 * C1) + 0.638;
+      let h1 = Math.atan2(lab1.b, lab1.a) * 180 / Math.PI;
+      if (h1 < 0) h1 += 360;
+      let T = (h1 >= 164 && h1 <= 345) ? 0.56 + Math.abs(0.2 * Math.cos((h1 + 168) * Math.PI/180))
+                                       : 0.36 + Math.abs(0.4 * Math.cos((h1 + 35) * Math.PI/180));
+      const SH = SC * T;
+      const termL = deltaL / (lWeight * SL);
+      const termC = deltaC / (cWeight * SC);
+      const termH = deltaH / SH;
+      return Math.sqrt(termL * termL + termC * termC + termH * termH);
+    }
+
+    /**********************************
+     * Difficulty & Color Generation Strategies
+     **********************************/
+    // "Low Contrast": All three colors are variations of a base color.
+    function lowContrastColor(base, round) {
+      let variation = Math.max(5, 50 - round);
+      let r = base.r + randomOffset(variation);
+      let g = base.g + randomOffset(variation);
+      let b = base.b + randomOffset(variation);
+      r = Math.min(255, Math.max(0, r));
+      g = Math.min(255, Math.max(0, g));
+      b = Math.min(255, Math.max(0, b));
+      return { r, g, b };
+    }
+    // "Color Noise": Add noise to a completely random color.
+    function addNoise(color, round) {
+      let noise = Math.min(50, round);
+      let r = color.r + randomOffset(noise);
+      let g = color.g + randomOffset(noise);
+      let b = color.b + randomOffset(noise);
+      r = Math.min(255, Math.max(0, r));
+      g = Math.min(255, Math.max(0, g));
+      b = Math.min(255, Math.max(0, b));
+      return { r, g, b };
+    }
+    // "Close Sides": Left and right colors are generated from a common base (low variation);
+    // the middle color is fully random.
+    function generateCloseSides(round) {
+      const base = getRandomColor();
+      let leftCol = lowContrastColor(base, round);
+      let rightCol = lowContrastColor(base, round);
+      return { left: leftCol, right: rightCol };
+    }
+    // "High Contrast": Left and right colors are forced to be very different, and the middle color
+    // is computed as their average with a small noise.
+    function generateHighContrast(round) {
+      // Choose a random left color.
+      let leftCol = getRandomColor();
+      // Right color is set to be the complement of left (maximum difference).
+      let rightCol = { 
+        r: 255 - leftCol.r, 
+        g: 255 - leftCol.g, 
+        b: 255 - leftCol.b 
+      };
+      // Compute the average of left and right, then add a small noise.
+      let avgR = Math.round((leftCol.r + rightCol.r) / 2) + randomOffset(5);
+      let avgG = Math.round((leftCol.g + rightCol.g) / 2) + randomOffset(5);
+      let avgB = Math.round((leftCol.b + rightCol.b) / 2) + randomOffset(5);
+      // Clamp the values between 0 and 255.
+      avgR = Math.min(255, Math.max(0, avgR));
+      avgG = Math.min(255, Math.max(0, avgG));
+      avgB = Math.min(255, Math.max(0, avgB));
+      let middleCol = { r: avgR, g: avgG, b: avgB };
+      return { left: leftCol, right: rightCol, middle: middleCol };
+    }
+
+    // setColors: Increment round, choose a random strategy, update status, and generate colors accordingly.
+    function setColors() {
+      round++;
+      currentStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+      statusDiv.textContent = `Round: ${round} | Strategy: ${currentStrategy}`;
+      
+      if (currentStrategy === "lowContrast") {
+        const base = getRandomColor();
+        leftColor = lowContrastColor(base, round);
+        rightColor = lowContrastColor(base, round);
+        middleColor = lowContrastColor(base, round);
+      } else if (currentStrategy === "colorNoise") {
+        leftColor = addNoise(getRandomColor(), round);
+        rightColor = addNoise(getRandomColor(), round);
+        middleColor = addNoise(getRandomColor(), round);
+      } else if (currentStrategy === "closeSides") {
+        const sides = generateCloseSides(round);
+        leftColor = sides.left;
+        rightColor = sides.right;
+        middleColor = getRandomColor();
+      } else if (currentStrategy === "highContrast") {
+        const contrastSet = generateHighContrast(round);
+        leftColor = contrastSet.left;
+        rightColor = contrastSet.right;
+        middleColor = contrastSet.middle;
+      } else { // "none"
+        leftColor = getRandomColor();
+        rightColor = getRandomColor();
+        middleColor = getRandomColor();
+      }
+      leftDiv.style.backgroundColor = rgbToString(leftColor);
+      rightDiv.style.backgroundColor = rgbToString(rightColor);
+      middleDiv.style.backgroundColor = rgbToString(middleColor);
+      // Reset middle circle to center.
+      middleDiv.style.left = "calc(50% - 50px)";
+      middleDiv.style.top = "calc(50% - 50px)";
+    }
+
+    /**********************************
+     * Animation: Move Middle Circle
+     **********************************/
+    function animateMiddleTo(choice, callback) {
+      const container = document.querySelector(".game-container");
+      const rect = container.getBoundingClientRect();
+      let targetX = (choice === "left") ? (rect.width * 0.25 - 50) : (rect.width * 0.75 - 50);
+      let animationDuration = 500;
+      middleDiv.style.transition = `left ${animationDuration}ms`;
+      middleDiv.style.left = `${targetX}px`;
+      setTimeout(() => {
+        middleDiv.style.transition = "";
+        callback();
+      }, animationDuration + 100);
+    }
+
+    /**********************************
+     * Evaluate a Single Cell
+     **********************************/
+    function evaluateCell(model, metric, middleVec, chosenVec, otherVec) {
+      let dChosen, dOther;
+      if (metric === "Euclidean") {
+        let hueIndices = [];
+        if(model === "HSV") hueIndices.push(0);
+        if(model === "LCH") hueIndices.push(2);
+        dChosen = euclideanDistance(chosenVec, middleVec, hueIndices);
+        dOther  = euclideanDistance(otherVec, middleVec, hueIndices);
+      } else if (metric === "Manhattan") {
+        let hueIndices = [];
+        if(model === "HSV") hueIndices.push(0);
+        if(model === "LCH") hueIndices.push(2);
+        dChosen = manhattanDistance(chosenVec, middleVec, hueIndices);
+        dOther  = manhattanDistance(otherVec, middleVec, hueIndices);
+      } else if (metric === "Cosine") {
+        dChosen = cosineDistance(chosenVec, middleVec);
+        dOther  = cosineDistance(otherVec, middleVec);
+      } else if (metric === "CIEDE2000") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = ciede2000(labMiddle, labChosen);
+        dOther  = ciede2000(labMiddle, labOther);
+      } else if (metric === "ΔE76") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = deltaE76(labMiddle, labChosen);
+        dOther  = deltaE76(labMiddle, labOther);
+      } else if (metric === "ΔE94") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = deltaE94(labMiddle, labChosen);
+        dOther  = deltaE94(labMiddle, labOther);
+      } else if (metric === "CAM02-UCS") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = deltaE_CAM02UCS(labMiddle, labChosen);
+        dOther  = deltaE_CAM02UCS(labMiddle, labOther);
+      } else if (metric === "DIN99") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = deltaE_DIN99(labMiddle, labChosen);
+        dOther  = deltaE_DIN99(labMiddle, labOther);
+      } else if (metric === "CMC l:c") {
+        if(model !== "LAB" && model !== "LCH") return;
+        const labMiddle = getLabFromVector(model, middleVec);
+        const labChosen = getLabFromVector(model, chosenVec);
+        const labOther  = getLabFromVector(model, otherVec);
+        dChosen = deltaE_CMC(labMiddle, labChosen);
+        dOther  = deltaE_CMC(labMiddle, labOther);
+      }
+      if (dChosen < dOther) {
+        scores[model][metric]++;
+      }
+    }
+
+    /**********************************
+     * Update Score Table in the DOM & Highlight Highest Cells
+     **********************************/
+    function updateScoreTable() {
+      models.forEach(model => {
+        metrics.forEach(metric => {
+          const cellId = `score-${model}-${metric}`;
+          const cell = document.getElementById(cellId);
+          if (["CIEDE2000", "ΔE76", "ΔE94", "CAM02-UCS", "DIN99", "CMC l:c"].includes(metric) &&
+              model !== "LAB" && model !== "LCH") {
+            cell.textContent = "N/A";
+          } else {
+            cell.textContent = scores[model][metric];
+          }
+        });
+      });
+      updateColorScale();
+    }
+    // updateColorScale: Highlight only the cells with the highest numeric value.
+    function updateColorScale() {
+      const white = "rgb(255,255,255)";
+      const pastelGreen = "rgb(212,252,212)";
+      const cells = document.querySelectorAll("tbody td:not(.na)");
+      let maxScore = 0;
+      cells.forEach(cell => {
+        let val = parseInt(cell.textContent);
+        if (!isNaN(val) && val > maxScore) {
+          maxScore = val;
+        }
+      });
+      cells.forEach(cell => {
+        let val = parseInt(cell.textContent);
+        if (!isNaN(val) && val === maxScore && maxScore > 0) {
+          cell.style.backgroundColor = pastelGreen;
+        } else {
+          cell.style.backgroundColor = white;
+        }
+      });
+    }
+
+    /**********************************
+     * Game Logic
+     **********************************/
+    function evaluateChoice(choice) {
+      const chosenColor = (choice === "left") ? leftColor : rightColor;
+      const otherColor  = (choice === "left") ? rightColor : leftColor;
+      models.forEach(model => {
+        const middleVec = convertColor(middleColor, model);
+        const chosenVec = convertColor(chosenColor, model);
+        const otherVec  = convertColor(otherColor, model);
+        metrics.forEach(metric => {
+          evaluateCell(model, metric, middleVec, chosenVec, otherVec);
+        });
+      });
+      updateScoreTable();
+      animateMiddleTo(choice, setColors);
+    }
+
+    /**********************************
+     * Event Listeners
+     **********************************/
+    leftDiv.addEventListener("click", () => evaluateChoice("left"));
+    rightDiv.addEventListener("click", () => evaluateChoice("right"));
+    middleDiv.addEventListener("click", () => {
+      const rect = middleDiv.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      const containerRect = document.querySelector(".game-container").getBoundingClientRect();
+      evaluateChoice(midX < containerRect.width / 2 ? "left" : "right");
+    });
+    leftDiv.addEventListener("touchstart", e => { e.preventDefault(); evaluateChoice("left"); });
+    rightDiv.addEventListener("touchstart", e => { e.preventDefault(); evaluateChoice("right"); });
+
+    /**********************************
+     * Initialize Game
+     **********************************/
+    function setColors() {
+      round++;
+      currentStrategy = strategies[Math.floor(Math.random() * strategies.length)];
+      statusDiv.textContent = `Round: ${round} | Strategy: ${currentStrategy}`;
+      
+      if (currentStrategy === "lowContrast") {
+        const base = getRandomColor();
+        leftColor = lowContrastColor(base, round);
+        rightColor = lowContrastColor(base, round);
+        middleColor = lowContrastColor(base, round);
+      } else if (currentStrategy === "colorNoise") {
+        leftColor = addNoise(getRandomColor(), round);
+        rightColor = addNoise(getRandomColor(), round);
+        middleColor = addNoise(getRandomColor(), round);
+      } else if (currentStrategy === "closeSides") {
+        const sides = generateCloseSides(round);
+        leftColor = sides.left;
+        rightColor = sides.right;
+        middleColor = getRandomColor();
+      } else if (currentStrategy === "highContrast") {
+        // Generate left color and its complement as right color.
+        const contrastSet = generateHighContrast(round);
+        leftColor = contrastSet.left;
+        rightColor = contrastSet.right;
+        middleColor = contrastSet.middle;
+      } else { // "none"
+        leftColor = getRandomColor();
+        rightColor = getRandomColor();
+        middleColor = getRandomColor();
+      }
+      leftDiv.style.backgroundColor = rgbToString(leftColor);
+      rightDiv.style.backgroundColor = rgbToString(rightColor);
+      middleDiv.style.backgroundColor = rgbToString(middleColor);
+      // Reset the middle circle to the center.
+      middleDiv.style.left = "calc(50% - 50px)";
+      middleDiv.style.top = "calc(50% - 50px)";
+    }
+
+    // "High Contrast" strategy: left and right are opposites, middle is their average with slight noise.
+    function generateHighContrast(round) {
+      // Choose a random left color.
+      let leftCol = getRandomColor();
+      // Compute the complement for right color.
+      let rightCol = { 
+        r: 255 - leftCol.r, 
+        g: 255 - leftCol.g, 
+        b: 255 - leftCol.b 
+      };
+      // Compute the average of left and right.
+      let avgR = Math.round((leftCol.r + rightCol.r) / 2) + randomOffset(5);
+      let avgG = Math.round((leftCol.g + rightCol.g) / 2) + randomOffset(5);
+      let avgB = Math.round((leftCol.b + rightCol.b) / 2) + randomOffset(5);
+      avgR = Math.min(255, Math.max(0, avgR));
+      avgG = Math.min(255, Math.max(0, avgG));
+      avgB = Math.min(255, Math.max(0, avgB));
+      let middleCol = { r: avgR, g: avgG, b: avgB };
+      return { left: leftCol, right: rightCol, middle: middleCol };
+    }
+
+    function animateMiddleTo(choice, callback) {
+      const container = document.querySelector(".game-container");
+      const rect = container.getBoundingClientRect();
+      let targetX = (choice === "left") ? (rect.width * 0.25 - 50) : (rect.width * 0.75 - 50);
+      let animationDuration = 500;
+      middleDiv.style.transition = `left ${animationDuration}ms`;
+      middleDiv.style.left = `${targetX}px`;
+      setTimeout(() => {
+        middleDiv.style.transition = "";
+        callback();
+      }, animationDuration + 100);
+    }
+
+    // Initialize the game.
+    setColors();
+    updateScoreTable();
+  </script>
+</body>
+</html>
