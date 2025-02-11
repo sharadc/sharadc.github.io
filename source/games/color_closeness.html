@@ -18,14 +18,19 @@
       flex: 1;
       position: relative;
       display: flex;
+      flex-direction: row; /* Force row layout */
     }
+    /* Left and right color areas */
     .side {
       flex: 1;
+      width: 50%;         /* Each takes up half the width */
+      height: 100%;       /* Fill container height */
       cursor: pointer;
     }
     .side:hover {
       opacity: 0.9;
     }
+    /* The middle circle remains absolutely positioned */
     .middle {
       position: absolute;
       width: 100px;
@@ -193,43 +198,24 @@
     /*********************
      * Global Variables
      *********************/
-    // Supported color models and distance metrics.
     const models = ["RGB", "HSV", "YUV", "CMYK", "XYZ", "LAB", "LCH", "YIQ"];
-    const metrics = [
-      "Euclidean", "Manhattan", "Cosine", "CIEDE2000",
-      "ΔE76", "ΔE94", "CAM02-UCS", "DIN99", "CMC l:c"
-    ];
-
-    // Scores: for each model and metric.
+    const metrics = ["Euclidean", "Manhattan", "Cosine", "CIEDE2000",
+                     "ΔE76", "ΔE94", "CAM02-UCS", "DIN99", "CMC l:c"];
     let scores = {
-      "RGB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "HSV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "YUV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "CMYK":  { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "XYZ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "LAB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "LCH":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
-      "YIQ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0,
-                  "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 }
+      "RGB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "HSV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "YUV":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "CMYK":  { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "XYZ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "LAB":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "LCH":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 },
+      "YIQ":   { "Euclidean": 0, "Manhattan": 0, "Cosine": 0, "CIEDE2000": 0, "ΔE76": 0, "ΔE94": 0, "CAM02-UCS": 0, "DIN99": 0, "CMC l:c": 0 }
     };
-
-    // Current colors (in RGB).
     let leftColor, rightColor, middleColor;
-
-    // Global round counter and current strategy.
     let round = 0;
     let currentStrategy = "none";
     // Strategies: "lowContrast", "colorNoise", "closeSides", "highContrast", "none"
     const strategies = ["lowContrast", "colorNoise", "closeSides", "highContrast", "none"];
-
-    // DOM Elements.
     const leftDiv = document.getElementById("left");
     const rightDiv = document.getElementById("right");
     const middleDiv = document.getElementById("middle");
@@ -540,7 +526,7 @@
     /**********************************
      * Difficulty & Color Generation Strategies
      **********************************/
-    // "Low Contrast": All three colors are variations of a base color.
+    // "Low Contrast": All three colors are variations of a common base.
     function lowContrastColor(base, round) {
       let variation = Math.max(5, 50 - round);
       let r = base.r + randomOffset(variation);
@@ -551,7 +537,7 @@
       b = Math.min(255, Math.max(0, b));
       return { r, g, b };
     }
-    // "Color Noise": Add noise to a completely random color.
+    // "Color Noise": Add noise to a random color.
     function addNoise(color, round) {
       let noise = Math.min(50, round);
       let r = color.r + randomOffset(noise);
@@ -562,30 +548,29 @@
       b = Math.min(255, Math.max(0, b));
       return { r, g, b };
     }
-    // "Close Sides": Left and right colors are generated from a common base (low variation);
-    // the middle color is fully random.
+    // "Close Sides": Left and right colors are generated from a common base (with low variation),
+    // while the middle color is completely random.
     function generateCloseSides(round) {
       const base = getRandomColor();
       let leftCol = lowContrastColor(base, round);
       let rightCol = lowContrastColor(base, round);
       return { left: leftCol, right: rightCol };
     }
-    // "High Contrast": Left and right colors are forced to be very different, and the middle color
-    // is computed as their average with a small noise.
+    // "High Contrast": Left and right colors are forced to be very different,
+    // and the middle color is computed as their average with a little noise.
     function generateHighContrast(round) {
       // Choose a random left color.
       let leftCol = getRandomColor();
-      // Right color is set to be the complement of left (maximum difference).
+      // Right color is the complement.
       let rightCol = { 
         r: 255 - leftCol.r, 
         g: 255 - leftCol.g, 
         b: 255 - leftCol.b 
       };
-      // Compute the average of left and right, then add a small noise.
+      // Average the two colors and add a small noise.
       let avgR = Math.round((leftCol.r + rightCol.r) / 2) + randomOffset(5);
       let avgG = Math.round((leftCol.g + rightCol.g) / 2) + randomOffset(5);
       let avgB = Math.round((leftCol.b + rightCol.b) / 2) + randomOffset(5);
-      // Clamp the values between 0 and 255.
       avgR = Math.min(255, Math.max(0, avgR));
       avgG = Math.min(255, Math.max(0, avgG));
       avgB = Math.min(255, Math.max(0, avgB));
@@ -593,7 +578,7 @@
       return { left: leftCol, right: rightCol, middle: middleCol };
     }
 
-    // setColors: Increment round, choose a random strategy, update status, and generate colors accordingly.
+    // setColors: Increment round, choose a random strategy, update status, and generate colors.
     function setColors() {
       round++;
       currentStrategy = strategies[Math.floor(Math.random() * strategies.length)];
@@ -626,7 +611,7 @@
       leftDiv.style.backgroundColor = rgbToString(leftColor);
       rightDiv.style.backgroundColor = rgbToString(rightColor);
       middleDiv.style.backgroundColor = rgbToString(middleColor);
-      // Reset middle circle to center.
+      // Reset the middle circle to the center.
       middleDiv.style.left = "calc(50% - 50px)";
       middleDiv.style.top = "calc(50% - 50px)";
     }
@@ -716,7 +701,7 @@
     }
 
     /**********************************
-     * Update Score Table in the DOM & Highlight Highest Cells
+     * Update Score Table & Highlight Highest Cells
      **********************************/
     function updateScoreTable() {
       models.forEach(model => {
@@ -733,7 +718,7 @@
       });
       updateColorScale();
     }
-    // updateColorScale: Highlight only the cells with the highest numeric value.
+    // Highlight only the cells with the highest numeric value.
     function updateColorScale() {
       const white = "rgb(255,255,255)";
       const pastelGreen = "rgb(212,252,212)";
@@ -788,6 +773,22 @@
     rightDiv.addEventListener("touchstart", e => { e.preventDefault(); evaluateChoice("right"); });
 
     /**********************************
+     * Animation: Move Middle Circle
+     **********************************/
+    function animateMiddleTo(choice, callback) {
+      const container = document.querySelector(".game-container");
+      const rect = container.getBoundingClientRect();
+      let targetX = (choice === "left") ? (rect.width * 0.25 - 50) : (rect.width * 0.75 - 50);
+      let animationDuration = 500;
+      middleDiv.style.transition = `left ${animationDuration}ms`;
+      middleDiv.style.left = `${targetX}px`;
+      setTimeout(() => {
+        middleDiv.style.transition = "";
+        callback();
+      }, animationDuration + 100);
+    }
+
+    /**********************************
      * Initialize Game
      **********************************/
     function setColors() {
@@ -810,7 +811,6 @@
         rightColor = sides.right;
         middleColor = getRandomColor();
       } else if (currentStrategy === "highContrast") {
-        // Generate left color and its complement as right color.
         const contrastSet = generateHighContrast(round);
         leftColor = contrastSet.left;
         rightColor = contrastSet.right;
@@ -823,46 +823,12 @@
       leftDiv.style.backgroundColor = rgbToString(leftColor);
       rightDiv.style.backgroundColor = rgbToString(rightColor);
       middleDiv.style.backgroundColor = rgbToString(middleColor);
-      // Reset the middle circle to the center.
+      // Reset middle circle to center.
       middleDiv.style.left = "calc(50% - 50px)";
       middleDiv.style.top = "calc(50% - 50px)";
     }
 
-    // "High Contrast" strategy: left and right are opposites, middle is their average with slight noise.
-    function generateHighContrast(round) {
-      // Choose a random left color.
-      let leftCol = getRandomColor();
-      // Compute the complement for right color.
-      let rightCol = { 
-        r: 255 - leftCol.r, 
-        g: 255 - leftCol.g, 
-        b: 255 - leftCol.b 
-      };
-      // Compute the average of left and right.
-      let avgR = Math.round((leftCol.r + rightCol.r) / 2) + randomOffset(5);
-      let avgG = Math.round((leftCol.g + rightCol.g) / 2) + randomOffset(5);
-      let avgB = Math.round((leftCol.b + rightCol.b) / 2) + randomOffset(5);
-      avgR = Math.min(255, Math.max(0, avgR));
-      avgG = Math.min(255, Math.max(0, avgG));
-      avgB = Math.min(255, Math.max(0, avgB));
-      let middleCol = { r: avgR, g: avgG, b: avgB };
-      return { left: leftCol, right: rightCol, middle: middleCol };
-    }
-
-    function animateMiddleTo(choice, callback) {
-      const container = document.querySelector(".game-container");
-      const rect = container.getBoundingClientRect();
-      let targetX = (choice === "left") ? (rect.width * 0.25 - 50) : (rect.width * 0.75 - 50);
-      let animationDuration = 500;
-      middleDiv.style.transition = `left ${animationDuration}ms`;
-      middleDiv.style.left = `${targetX}px`;
-      setTimeout(() => {
-        middleDiv.style.transition = "";
-        callback();
-      }, animationDuration + 100);
-    }
-
-    // Initialize the game.
+    // Start the game.
     setColors();
     updateScoreTable();
   </script>
