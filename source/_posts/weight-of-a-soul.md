@@ -1,8 +1,9 @@
 ---
 title: Weight of a soul
-date: 2026-02-11 10:10:10
-tags:short
+tags: short
+date: 2026-02-11 05:26:49
 ---
+
 
 I could see people's souls for as long as I can remember.
 Not as halos or beams, just an aura that comes with them, everywhere they go.
