@@ -1,0 +1,96 @@
+{
+    "board": [
+        [
+            "B",
+            "T2",
+            1,
+            0,
+            1,
+            "T1",
+            "B"
+        ],
+        [
+            0,
+            1,
+            "B",
+            "B",
+            "B",
+            1,
+            0
+        ],
+        [
+            "E",
+            3,
+            "T2",
+            0,
+            "T1",
+            3,
+            0
+        ],
+        [
+            0,
+            "B",
+            "B",
+            "B",
+            "B",
+            "B",
+            0
+        ],
+        [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+        ]
+    ],
+    "start": [
+        2,
+        6
+    ],
+    "optimal_score": 2,
+    "optimal": [
+        "T",
+        "L",
+        "T",
+        "W",
+        "L",
+        "L",
+        "W",
+        "B",
+        "L",
+        "B"
+    ],
+    "optimal2_score": 4,
+    "optimal2": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "W",
+        "B",
+        "L",
+        "B"
+    ],
+    "optimal3_score": 4,
+    "optimal3": [
+        "T",
+        "L",
+        "T",
+        "L",
+        "L",
+        "L",
+        "L",
+        "B",
+        "L",
+        "B"
+    ],
+    "common_tiles_pct": {
+        "optimal_optimal2": 73,
+        "optimal_optimal3": 73,
+        "optimal2_optimal3": 45
+    },
+    "name": "portal"
+}

@@ -1,0 +1,92 @@
+{
+    "board": [
+        [
+            "B",
+            0,
+            1,
+            0,
+            1,
+            0,
+            "B"
+        ],
+        [
+            0,
+            1,
+            "B",
+            "B",
+            "B",
+            1,
+            0
+        ],
+        [
+            "E",
+            3,
+            "A",
+            0,
+            0,
+            3,
+            0
+        ],
+        [
+            0,
+            "B",
+            "B",
+            "B",
+            "B",
+            "B",
+            0
+        ],
+        [
+            1,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
+        ]
+    ],
+    "start": [
+        2,
+        6
+    ],
+    "optimal_score": 3,
+    "optimal": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+    ],
+    "optimal2_score": 4,
+    "optimal2": [
+        "T",
+        "L",
+        "T",
+        "L",
+        "L",
+        "L",
+        "L",
+        "B",
+        "L",
+        "B"
+    ],
+    "optimal3_score": 4,
+    "optimal3": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "T",
+        "L",
+        "B"
+    ],
+    "common_tiles_pct": {
+        "optimal_optimal2": 18,
+        "optimal_optimal3": 78,
+        "optimal2_optimal3": 36
+    },
+    "name": "Apple"
+}

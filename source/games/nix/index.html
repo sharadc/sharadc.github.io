@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Niksum</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 4px;
+    color: #e94560;
+    letter-spacing: 2px;
+  }
+  #subtitle {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 16px;
+  }
+  #stage-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+  }
+  #hud {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+  }
+  #hud span { font-weight: 600; }
+  #hud .label { color: #aaa; font-weight: 400; }
+  #energy-val { color: #f5c518; }
+  #stage-select {
+    background: #16213e;
+    color: #0fbcf9;
+    border: 1px solid #555;
+    padding: 2px 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #stage-name { color: #aaa; font-weight: 400; font-size: 0.9rem; }
+  #best-val { color: #2ecc71; }
+  #grid-container {
+    display: inline-block;
+    border: 2px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  #grid {
+    display: grid;
+    gap: 1px;
+    background: #333;
+    touch-action: manipulation;
+  }
+  .cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    position: relative;
+    user-select: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cell.walkable { color: #222; }
+  .cost-label { position: relative; z-index: 2; pointer-events: none; }
+  .cell.blocked {
+    background: #444;
+  }
+  .cell.exit {
+    background: radial-gradient(circle at 50% 50%, #f0d060, #d4a017 40%, #b8860b);
+    color: #7a5a00;
+    font-weight: 800;
+  }
+  .cell.apple {
+    background: hsl(130, 40%, 85%);
+  }
+  .cell.mud {
+    background: hsl(30, 30%, 55%);
+  }
+  .cell.teleporter {
+    font-weight: 800;
+  }
+  .cell.visited {
+    z-index: 1;
+  }
+  .cell .nix {
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ff6b9d, #c0392b);
+    box-shadow: 0 0 8px rgba(233,69,96,0.7);
+    position: absolute;
+    z-index: 5;
+  }
+  /* Path overlay dots after submission */
+  .cell .player-dot {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,255,255,0.8);
+    background: transparent;
+    z-index: 3;
+  }
+  .cell .optimal-dot {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px dashed rgba(255,60,60,0.9);
+    background: transparent;
+    z-index: 4;
+  }
+  /* Trail connectors */
+  .cell .trail-segment {
+    position: absolute;
+    background: rgba(233,69,96,0.35);
+    z-index: 0;
+  }
+  .trail-segment.h { width: calc(100% + 1px); height: 40%; top: 30%; }
+  .trail-segment.h.left { right: 50%; }
+  .trail-segment.h.right { left: 50%; }
+  .trail-segment.v { height: calc(100% + 1px); width: 40%; left: 30%; }
+  .trail-segment.v.up { bottom: 50%; }
+  .trail-segment.v.down { top: 50%; }
+
+  #controls {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    background: #16213e;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 8px 20px;
+    font-size: 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover { background: #1a3a5c; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #message {
+    margin-top: 16px;
+    text-align: center;
+    min-height: 3em;
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 500px;
+  }
+  .congrats { color: #2ecc71; font-weight: 700; }
+  .info { color: #f5c518; }
+  .results-table {
+    margin: 12px auto 0;
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+  .results-table th, .results-table td {
+    padding: 6px 16px;
+    border: 1px solid #444;
+    text-align: center;
+  }
+  .results-table th {
+    background: #16213e;
+    color: #aaa;
+  }
+  .results-table tfoot td {
+    border-top: 2px solid #666;
+  }
+  #instructions {
+    margin-top: 20px;
+    color: #666;
+    font-size: 0.8rem;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+
+  /* --- Mobile responsive --- */
+  @media (max-width: 640px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.5rem; }
+    #subtitle { font-size: 0.75rem; margin-bottom: 10px; }
+    #stage-bar { font-size: 0.95rem; }
+    #hud { gap: 12px; font-size: 0.9rem; flex-wrap: wrap; justify-content: center; }
+    #controls { gap: 8px; }
+    button { padding: 10px 16px; font-size: 0.9rem; }
+    #message { font-size: 0.9rem; }
+    #instructions { font-size: 0.7rem; }
+    .results-table { font-size: 0.85rem; }
+    .results-table th, .results-table td { padding: 4px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>NIKSUM</h1>
+<div id="subtitle">Navigate Nix to the Sun using the least energy</div>
+
+<div id="stage-bar">
+  <span class="label">Stage </span><select id="stage-select"></select> <span id="stage-name"></span>
+</div>
+
+<div id="hud">
+  <div><span class="label">Energy </span><span id="energy-val">0</span></div>
+  <div><span class="label">Moves </span><span id="moves-val">0</span></div>
+  <div><span class="label">Best </span><span id="best-val">--</span></div>
+  <button id="btn-costs" style="padding:4px 12px;font-size:0.85rem">Hide Costs</button>
+</div>
+
+<div id="grid-container">
+  <div id="grid"></div>
+</div>
+
+<div id="controls">
+  <button id="btn-submit" disabled>Submit</button>
+  <button id="btn-reset">Reset</button>
+  <button id="btn-best" disabled>Show Best</button>
+  <button id="btn-optimal" style="display:none">Show Optimal</button>
+  <button id="btn-next" style="display:none">Next Stage</button>
+</div>
+
+<div id="message"></div>
+
+<div id="instructions">
+  Tap adjacent tile or use arrow keys &bull; Backtrack to undo &bull; Reach the Sun &bull; Submit to score
+</div>
+
+<script>
+(function() {
+  // --- State ---
+  let stage = null;
+  let stageNum = 1;
+  let board = [];
+  let rows = 0, cols = 0;
+  let nix = { r: 0, c: 0 };       // current position
+  let path = [];                    // array of {r, c}
+  let energy = 0;
+  let submitted = false;
+  let exits = new Set();            // "r,c" strings
+  let bestPath = null;              // best submitted path for current stage
+  let bestEnergy = Infinity;
+  const stageResults = [];
+  let teleMap = {};                 // "r,c" -> {r, c} partner position          // {stage, playerScore, optimalScore} per submitted stage
+  let showCosts = true;
+  let cellSize = 56;
+
+  // --- DOM refs ---
+  const gridEl = document.getElementById('grid');
+  const energyEl = document.getElementById('energy-val');
+  const movesEl = document.getElementById('moves-val');
+  const stageSelect = document.getElementById('stage-select');
+  const stageNameEl = document.getElementById('stage-name');
+  const bestEl = document.getElementById('best-val');
+  const msgEl = document.getElementById('message');
+  const btnSubmit = document.getElementById('btn-submit');
+  const btnReset = document.getElementById('btn-reset');
+  const btnBest = document.getElementById('btn-best');
+  const btnOptimal = document.getElementById('btn-optimal');
+  const btnNext = document.getElementById('btn-next');
+  const btnCosts = document.getElementById('btn-costs');
+  let totalStages = 0;
+
+  // --- Discover stages and populate select ---
+  async function discoverStages() {
+    let n = 1;
+    while (true) {
+      try {
+        const resp = await fetch(`stages/stage_${n}.json`);
+        if (!resp.ok) break;
+        await resp.text(); // consume body
+        n++;
+      } catch { break; }
+    }
+    totalStages = n - 1;
+    stageSelect.innerHTML = '';
+    for (let i = 1; i <= totalStages; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i;
+      stageSelect.appendChild(opt);
+    }
+  }
+
+  // --- Teleporter color palette ---
+  const TELE_HUES = [270, 200, 30, 340, 160, 60, 300, 100];
+  function teleColor(label) {
+    const idx = parseInt(label.slice(1)) - 1;
+    const hue = TELE_HUES[idx % TELE_HUES.length];
+    return { bg: `hsl(${hue}, 50%, 75%)`, fg: `hsl(${hue}, 80%, 25%)` };
+  }
+
+  // --- Compute cell size to fit viewport ---
+  function computeCellSize() {
+    const maxW = window.innerWidth - 24;  // padding + border
+    const maxH = window.innerHeight * 0.6;
+    const fitW = Math.floor((maxW - cols) / cols);  // account for 1px gaps
+    const fitH = Math.floor((maxH - rows) / rows);
+    cellSize = Math.max(24, Math.min(56, fitW, fitH));
+  }
+
+  // --- Direction map ---
+  const DIR_MAP = {
+    ArrowUp:    { dr: -1, dc:  0 },
+    ArrowDown:  { dr:  1, dc:  0 },
+    ArrowLeft:  { dr:  0, dc: -1 },
+    ArrowRight: { dr:  0, dc:  1 },
+  };
+
+  // --- Load stage ---
+  async function loadStage(num) {
+    try {
+      const resp = await fetch(`stages/stage_${num}.json`);
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Init stage ---
+  async function initStage(num) {
+    stage = await loadStage(num);
+    if (!stage) {
+      document.getElementById('grid-container').style.display = 'none';
+      document.getElementById('controls').style.display = 'none';
+      document.getElementById('stage-bar').style.display = 'none';
+      document.getElementById('hud').style.display = 'none';
+      document.getElementById('instructions').style.display = 'none';
+
+      let totalPlayer = 0, totalOptimal = 0;
+      let tableRows = '';
+      for (const r of stageResults) {
+        totalPlayer += r.playerScore;
+        totalOptimal += r.optimalScore;
+        const diff = r.playerScore - r.optimalScore;
+        const cls = diff === 0 ? 'congrats' : 'info';
+        tableRows += `<tr>
+          <td>${r.stage}</td>
+          <td>${r.name}</td>
+          <td>${r.playerScore}</td>
+          <td>${r.optimalScore}</td>
+          <td class="${cls}">${diff === 0 ? 'Optimal!' : diff}</td>
+        </tr>`;
+      }
+      const totalDiff = totalPlayer - totalOptimal;
+      const totalCls = totalDiff === 0 ? 'congrats' : 'info';
+      msgEl.innerHTML = `<span class="congrats">All stages complete! Well played.</span>
+        <table class="results-table">
+          <thead><tr><th>Stage</th><th>Name</th><th>You</th><th>Optimal</th><th>Diff</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+          <tfoot><tr>
+            <td colspan="2"><strong>Total</strong></td>
+            <td><strong>${totalPlayer}</strong></td>
+            <td><strong>${totalOptimal}</strong></td>
+            <td class="${totalCls}"><strong>${totalDiff === 0 ? 'Perfect!' : totalDiff}</strong></td>
+          </tr></tfoot>
+        </table>`;
+      return;
+    }
+    stageNum = num;
+    board = stage.board;
+    rows = board.length;
+    cols = board[0].length;
+    nix = { r: stage.start[0], c: stage.start[1] };
+    path = [{ r: nix.r, c: nix.c }];
+    energy = 0;
+    submitted = false;
+
+    // Identify exits and teleporters
+    exits = new Set();
+    teleMap = {};
+    const teleByLabel = {};
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const v = board[r][c];
+        if (v === 'E') exits.add(`${r},${c}`);
+        if (typeof v === 'string' && v.startsWith('T') && /^\d+$/.test(v.slice(1))) {
+          if (!teleByLabel[v]) teleByLabel[v] = [];
+          teleByLabel[v].push({ r, c });
+        }
+      }
+    for (const positions of Object.values(teleByLabel)) {
+      if (positions.length === 2) {
+        teleMap[`${positions[0].r},${positions[0].c}`] = positions[1];
+        teleMap[`${positions[1].r},${positions[1].c}`] = positions[0];
+      }
+    }
+
+    bestPath = null;
+    bestEnergy = Infinity;
+    replayingBest = false;
+
+    stageSelect.value = num;
+    stageNameEl.textContent = stage.name ? '- ' + stage.name : '';
+    msgEl.innerHTML = '';
+    btnSubmit.disabled = true;
+    btnBest.disabled = true;
+    btnOptimal.style.display = 'none';
+    btnNext.style.display = 'none';
+
+    renderGrid();
+    updateHUD();
+  }
+
+  // --- Max cost for color scaling ---
+  function maxCost() {
+    let mx = 1;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (typeof board[r][c] === 'number' && board[r][c] > mx) mx = board[r][c];
+    return mx;
+  }
+
+  // --- Render grid ---
+  function renderGrid() {
+    computeCellSize();
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    gridEl.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+    const mc = maxCost();
+    const fontSize = cellSize < 36 ? '0.65rem' : '0.9rem';
+    const emojiFontSize = cellSize < 36 ? '0.9rem' : '1.4rem';
+    const teleFontSize = cellSize < 36 ? '0.8rem' : '1.1rem';
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${r}-${c}`;
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.style.width = cellSize + 'px';
+        cell.style.height = cellSize + 'px';
+        cell.style.fontSize = fontSize;
+
+        const val = board[r][c];
+        if (val === 'B') {
+          cell.classList.add('blocked');
+        } else if (val === 'E') {
+          cell.classList.add('exit');
+          cell.style.fontSize = emojiFontSize;
+          cell.textContent = '\u2600';
+        } else if (val === 'A') {
+          cell.classList.add('apple');
+          cell.style.fontSize = emojiFontSize;
+          cell.textContent = '\uD83C\uDF4E';
+        } else if (val === 'M') {
+          cell.classList.add('mud');
+          cell.style.fontSize = emojiFontSize;
+          cell.textContent = '\u{1F7E4}';
+        } else if (typeof val === 'string' && val.startsWith('T') && /^\d+$/.test(val.slice(1))) {
+          cell.classList.add('teleporter');
+          cell.style.fontSize = teleFontSize;
+          const tc = teleColor(val);
+          cell.style.background = tc.bg;
+          cell.style.color = tc.fg;
+          cell.textContent = '\u{1F300}';
+        } else {
+          cell.classList.add('walkable');
+          const t = val / mc;
+          const lightness = 85 - t * 12; // 85% (lightest) to 73% (darkest) — subtle
+          cell.style.background = `hsl(130, 40%, ${lightness}%)`;
+          const label = document.createElement('span');
+          label.className = 'cost-label';
+          label.textContent = showCosts ? val : '';
+          cell.appendChild(label);
+        }
+
+        gridEl.appendChild(cell);
+      }
+    }
+    renderNix();
+  }
+
+  // --- Update visited/trail display ---
+  function renderPath() {
+    // Clear all visited classes and trail segments
+    document.querySelectorAll('.cell.visited').forEach(c => c.classList.remove('visited'));
+    document.querySelectorAll('.trail-segment').forEach(el => el.remove());
+
+    const visited = new Set();
+    for (const p of path) visited.add(`${p.r},${p.c}`);
+
+    for (const key of visited) {
+      const cell = document.getElementById(`cell-${key.replace(',', '-')}`);
+      if (cell) cell.classList.add('visited');
+    }
+
+    // Draw trail connectors between consecutive path steps
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i], b = path[i + 1];
+      // Skip trail for non-adjacent steps (teleport jumps)
+      if (Math.abs(a.r - b.r) + Math.abs(a.c - b.c) !== 1) continue;
+      addTrailSegment(a, b);
+      addTrailSegment(b, a);
+    }
+  }
+
+  function addTrailSegment(from, toward) {
+    const cell = document.getElementById(`cell-${from.r}-${from.c}`);
+    if (!cell) return;
+    const seg = document.createElement('div');
+    seg.className = 'trail-segment';
+    const dr = toward.r - from.r;
+    const dc = toward.c - from.c;
+    if (dc !== 0) {
+      seg.classList.add('h');
+      seg.classList.add(dc > 0 ? 'right' : 'left');
+    } else {
+      seg.classList.add('v');
+      seg.classList.add(dr > 0 ? 'down' : 'up');
+    }
+    cell.appendChild(seg);
+  }
+
+  // --- Render Nix position ---
+  function renderNix() {
+    document.querySelectorAll('.nix').forEach(el => el.remove());
+    const cell = document.getElementById(`cell-${nix.r}-${nix.c}`);
+    if (cell) {
+      const dot = document.createElement('div');
+      dot.className = 'nix';
+      cell.appendChild(dot);
+    }
+    renderPath();
+  }
+
+  // --- HUD ---
+  function updateHUD() {
+    energyEl.textContent = energy;
+    movesEl.textContent = path.length - 1;
+    bestEl.textContent = bestEnergy === Infinity ? '--' : bestEnergy;
+    // Track best whenever Nix reaches an exit
+    const onExit = exits.has(`${nix.r},${nix.c}`);
+    if (onExit && energy < bestEnergy) {
+      bestEnergy = energy;
+      bestPath = path.map(p => ({ r: p.r, c: p.c }));
+      bestEl.textContent = bestEnergy;
+      btnBest.disabled = false;
+    }
+    btnSubmit.disabled = submitted || !onExit;
+  }
+
+  // --- Tile step cost (matches Python tile_step_cost logic) ---
+  // buff: null (normal), 'apple' (next free), 'mud' (next doubled)
+  function tileStepCost(tile, buff) {
+    let stepCost;
+    if (buff === 'apple') {
+      stepCost = 0;
+    } else if (tile === 'A' || tile === 'M') {
+      stepCost = 0;
+    } else if (buff === 'mud' && typeof tile === 'number') {
+      stepCost = tile * 2;
+    } else if (typeof tile === 'number') {
+      stepCost = tile;
+    } else {
+      stepCost = 0; // E
+    }
+    const nextBuff = tile === 'A' ? 'apple' : tile === 'M' ? 'mud' : null;
+    return { stepCost, nextBuff };
+  }
+
+  // --- Cost of entering tile at (r,c) given current path ---
+  function tileCost(r, c) {
+    const tile = board[r][c];
+    let buff = null;
+    if (path.length >= 1) {
+      const prev = path[path.length - 1];
+      const prevTile = board[prev.r][prev.c];
+      if (prevTile === 'A') buff = 'apple';
+      else if (prevTile === 'M') buff = 'mud';
+    }
+    return tileStepCost(tile, buff).stepCost;
+  }
+
+  // --- Recalculate energy from path ---
+  function recalcEnergy() {
+    let e = 0;
+    let buff = null;
+    for (let i = 1; i < path.length; i++) {
+      const tile = board[path[i].r][path[i].c];
+      const result = tileStepCost(tile, buff);
+      e += result.stepCost;
+      buff = result.nextBuff;
+    }
+    return e;
+  }
+
+  // --- Move ---
+  function move(dr, dc) {
+    if (submitted) return;
+    const nr = nix.r + dr;
+    const nc = nix.c + dc;
+    if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return;
+    if (board[nr][nc] === 'B') return;
+
+    // Check if backtracking: if target is the previous position in path
+    if (path.length >= 2) {
+      const prev = path[path.length - 2];
+      if (prev.r === nr && prev.c === nc) {
+        // Undo last move
+        path.pop();
+        nix.r = nr;
+        nix.c = nc;
+        energy = recalcEnergy();
+        renderNix();
+        updateHUD();
+        return;
+      }
+    }
+
+    // Don't allow revisiting already-in-path cells (except backtracking handled above)
+    // But if blocked and we're freshly teleported, undo the teleport instead
+    const alreadyInPath = path.some(p => p.r === nr && p.c === nc);
+    if (alreadyInPath) {
+      // Check if we're on a teleporter partner — undo teleport
+      if (path.length >= 3) {
+        const cur = path[path.length - 1];
+        const prev = path[path.length - 2];
+        const tKey = `${prev.r},${prev.c}`;
+        if (teleMap[tKey] && teleMap[tKey].r === cur.r && teleMap[tKey].c === cur.c) {
+          path.pop(); // remove partner
+          path.pop(); // remove source teleporter
+          const back = path[path.length - 1];
+          nix.r = back.r;
+          nix.c = back.c;
+          energy = recalcEnergy();
+          renderNix();
+          updateHUD();
+        }
+      }
+      return;
+    }
+
+    // Forward move
+    const cost = tileCost(nr, nc);
+    energy += cost;
+    nix.r = nr;
+    nix.c = nc;
+    path.push({ r: nr, c: nc });
+
+    // Auto-teleport if landed on a teleporter
+    const teleKey = `${nr},${nc}`;
+    if (teleMap[teleKey]) {
+      const partner = teleMap[teleKey];
+      // Check partner isn't already in path
+      const partnerBlocked = path.some(p => p.r === partner.r && p.c === partner.c);
+      if (!partnerBlocked) {
+        nix.r = partner.r;
+        nix.c = partner.c;
+        path.push({ r: partner.r, c: partner.c });
+        // Partner is also a teleporter (cost 0), recalc to be safe
+        energy = recalcEnergy();
+      }
+    }
+
+    renderNix();
+    updateHUD();
+  }
+
+  // --- Replay a direction list to get cell positions ---
+  function replayDirections(startR, startC, dirs) {
+    const DMAP = { T: [-1, 0], B: [1, 0], L: [0, -1], R: [0, 1] };
+    const cells = [{ r: startR, c: startC }];
+    let r = startR, c = startC;
+    for (const d of dirs) {
+      if (d === 'W') {
+        // Warp: current position is a teleporter, jump to partner
+        const partner = teleMap[`${r},${c}`];
+        if (partner) { r = partner.r; c = partner.c; }
+      } else {
+        const [dr, dc] = DMAP[d];
+        r += dr;
+        c += dc;
+      }
+      cells.push({ r, c });
+    }
+    return cells;
+  }
+
+  // --- Submit ---
+  function submit() {
+    if (submitted) return;
+    submitted = true;
+    btnSubmit.disabled = true;
+
+    const playerScore = energy;
+    const optimalScore = stage.optimal_score;
+
+    // Record result for this stage (overwrite if re-submitted)
+    const existing = stageResults.find(r => r.stage === stageNum);
+    if (existing) {
+      existing.playerScore = playerScore;
+    } else {
+      stageResults.push({ stage: stageNum, name: stage.name || '', playerScore, optimalScore });
+    }
+
+    // Show player path dots
+    for (const p of path) {
+      const cell = document.getElementById(`cell-${p.r}-${p.c}`);
+      if (cell) {
+        const dot = document.createElement('div');
+        dot.className = 'player-dot';
+        cell.appendChild(dot);
+      }
+    }
+
+    if (playerScore <= optimalScore) {
+      msgEl.innerHTML = `<span class="congrats">Optimal! Your energy: ${playerScore}</span>`;
+    } else {
+      const diff = playerScore - optimalScore;
+      msgEl.innerHTML = `<span class="info">Your energy: ${playerScore} | Optimal: ${optimalScore} (+${diff})</span>`;
+    }
+
+    btnOptimal.style.display = 'inline-block';
+    btnNext.style.display = 'inline-block';
+    updateHUD();
+  }
+
+  // --- Reset ---
+  function reset() {
+    if (!stage) return;
+    nix = { r: stage.start[0], c: stage.start[1] };
+    path = [{ r: nix.r, c: nix.c }];
+    energy = 0;
+    submitted = false;
+    msgEl.innerHTML = '';
+    btnOptimal.style.display = 'none';
+    btnNext.style.display = 'none';
+    // Remove overlay dots
+    document.querySelectorAll('.player-dot, .optimal-dot').forEach(el => el.remove());
+    renderNix();
+    updateHUD();
+  }
+
+  // --- Show Optimal ---
+  function showOptimal() {
+    const optCells = replayDirections(stage.start[0], stage.start[1], stage.optimal);
+    path = optCells;
+    nix = { r: path[path.length - 1].r, c: path[path.length - 1].c };
+    energy = stage.optimal_score;
+    submitted = true;
+    msgEl.innerHTML = `<span class="info">Optimal path: energy ${stage.optimal_score}, ${stage.optimal.length} moves</span>`;
+    document.querySelectorAll('.player-dot, .optimal-dot').forEach(el => el.remove());
+    btnOptimal.style.display = 'none';
+    renderNix();
+    updateHUD();
+  }
+
+  // --- Show Best ---
+  function showBest() {
+    if (!bestPath) return;
+
+    // Restore best path state — player can continue from here
+    path = bestPath.map(p => ({ r: p.r, c: p.c }));
+    nix = { r: path[path.length - 1].r, c: path[path.length - 1].c };
+    energy = bestEnergy;
+    submitted = false;
+    msgEl.innerHTML = `<span class="info">Loaded best path: energy ${bestEnergy}, ${bestPath.length - 1} moves</span>`;
+    document.querySelectorAll('.player-dot, .optimal-dot').forEach(el => el.remove());
+    btnNext.style.display = 'none';
+    renderNix();
+    updateHUD();
+  }
+
+  // --- Click/tap to move ---
+  gridEl.addEventListener('click', (e) => {
+    const cell = e.target.closest('.cell');
+    if (!cell || !cell.dataset.r) return;
+    const tr = parseInt(cell.dataset.r);
+    const tc = parseInt(cell.dataset.c);
+    const dr = tr - nix.r;
+    const dc = tc - nix.c;
+    // Only allow adjacent moves (manhattan distance 1)
+    if (Math.abs(dr) + Math.abs(dc) === 1) {
+      move(dr, dc);
+    }
+  });
+
+  // --- Resize handler ---
+  window.addEventListener('resize', () => {
+    if (!stage) return;
+    renderGrid();
+  });
+
+  // --- Keyboard event listeners ---
+  document.addEventListener('keydown', (e) => {
+    const dir = DIR_MAP[e.key];
+    if (dir) {
+      e.preventDefault();
+      move(dir.dr, dir.dc);
+    }
+  });
+
+  btnSubmit.addEventListener('click', submit);
+  btnReset.addEventListener('click', reset);
+  btnBest.addEventListener('click', showBest);
+  btnOptimal.addEventListener('click', showOptimal);
+  btnCosts.addEventListener('click', () => {
+    showCosts = !showCosts;
+    btnCosts.textContent = showCosts ? 'Hide Costs' : 'Show Costs';
+    document.querySelectorAll('.cost-label').forEach(label => {
+      const cell = label.closest('.cell');
+      const r = parseInt(cell.id.split('-')[1]);
+      const c = parseInt(cell.id.split('-')[2]);
+      label.textContent = showCosts ? board[r][c] : '';
+    });
+  });
+  stageSelect.addEventListener('change', () => initStage(parseInt(stageSelect.value)));
+  btnNext.addEventListener('click', () => initStage(stageNum + 1));
+
+  // --- Start ---
+  discoverStages().then(() => initStage(1));
+})();
+</script>
+</body>
+</html>

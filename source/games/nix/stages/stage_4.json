@@ -1,0 +1,94 @@
+{
+    "board": [
+        [
+            "B",
+            "M",
+            1,
+            "M",
+            1,
+            "M",
+            "B"
+        ],
+        [
+            0,
+            1,
+            "B",
+            "B",
+            "B",
+            1,
+            0
+        ],
+        [
+            "E",
+            3,
+            0,
+            0,
+            0,
+            3,
+            0
+        ],
+        [
+            0,
+            "B",
+            "B",
+            "B",
+            "B",
+            "B",
+            0
+        ],
+        [
+            "M",
+            1,
+            1,
+            0,
+            "M",
+            1,
+            1
+        ]
+    ],
+    "start": [
+        2,
+        6
+    ],
+    "optimal_score": 4,
+    "optimal": [
+        "B",
+        "B",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "T",
+        "T"
+    ],
+    "optimal2_score": 6,
+    "optimal2": [
+        "L",
+        "L",
+        "L",
+        "L",
+        "L",
+        "L"
+    ],
+    "optimal3_score": 7,
+    "optimal3": [
+        "T",
+        "L",
+        "T",
+        "L",
+        "L",
+        "L",
+        "L",
+        "B",
+        "L",
+        "B"
+    ],
+    "common_tiles_pct": {
+        "optimal_optimal2": 18,
+        "optimal_optimal3": 18,
+        "optimal2_optimal3": 18
+    },
+    "name": "Mud"
+}
