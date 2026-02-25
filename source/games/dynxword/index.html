@@ -246,15 +246,35 @@ const placeWord = $('place-word'), placeInfo = $('place-info');
 })();
 
 async function loadLevelList() {
+  // 1. try manifest
   try {
+    const res = await fetch('levels/index.json');
+    if (res.ok) { levelFiles = await res.json(); }
+  } catch (_) {}
+
+  // 2. fallback: try directory listing (works with python http.server)
+  if (!levelFiles.length) try {
     const html = await (await fetch('levels/')).text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     doc.querySelectorAll('a').forEach(a => {
       const h = a.getAttribute('href');
-      if (h && h.endsWith('.json')) levelFiles.push(h);
+      if (h && h.endsWith('.json') && h !== 'index.json') levelFiles.push(h);
     });
-    levelFiles.sort();
-  } catch (_) { levelFiles = ['level_1.json']; }
+  } catch (_) {}
+
+  // 3. fallback: probe level_1 .. level_20
+  if (!levelFiles.length) {
+    const probes = [];
+    for (let i = 1; i <= 20; i++) probes.push(`level_${i}.json`);
+    const results = await Promise.allSettled(
+      probes.map(f => fetch('levels/' + f, { method: 'HEAD' }))
+    );
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value.ok) levelFiles.push(probes[i]);
+    });
+  }
+
+  levelFiles.sort();
   levelFiles.forEach(f => {
     const o = document.createElement('option');
     o.value = f; o.textContent = f.replace('.json', '');
