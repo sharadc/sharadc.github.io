@@ -19,11 +19,6 @@ body {
 .header select { padding: 8px 12px; border: 2px solid #ccc; border-radius: 8px; font-size: 14px; background: #fff; cursor: pointer; }
 .header .level-name { font-size: 20px; font-weight: 700; color: #34495e; }
 
-/* Stats */
-.stats { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
-.stat { background: #fff; border-radius: 8px; padding: 6px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); font-size: 13px; display: flex; align-items: center; gap: 6px; }
-.stat-label { color: #7f8c8d; }
-.stat-value { font-weight: 700; color: #2c3e50; font-size: 15px; }
 
 /* Game area: grid + sidebar */
 .game-area { display: flex; gap: 16px; justify-content: center; align-items: flex-start; margin-bottom: 20px; }
@@ -127,14 +122,13 @@ body {
   #app { max-width: 100%; }
   .header { flex-wrap: wrap; gap: 8px; }
   .header .level-name { font-size: 16px; }
-  .stats { gap: 8px; }
-  .stat { padding: 4px 10px; font-size: 12px; }
-  .stat-value { font-size: 13px; }
   .game-area { flex-direction: column; align-items: center; gap: 12px; }
   .grid-wrapper { max-width: 100%; }
   .cell { width: 34px; height: 34px; font-size: 15px; }
   .cell .num { font-size: 8px; }
   #sidebar { min-width: unset; width: 100%; }
+  #word-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; }
+  .sidebar-empty { grid-column: 1 / -1; }
   .sword { font-size: 13px; padding: 6px 8px; }
   .panel { padding: 14px; min-height: 60px; }
   .hint-text { font-size: 14px; margin-bottom: 10px; }
@@ -155,11 +149,6 @@ body {
     <span class="level-name" id="level-name"></span>
   </div>
 
-  <div class="stats">
-    <div class="stat"><span class="stat-label">Empty</span><span class="stat-value" id="stat-empty">0</span></div>
-    <div class="stat"><span class="stat-label">Filled</span><span class="stat-value" id="stat-filled">0</span></div>
-    <div class="stat"><span class="stat-label">Remaining</span><span class="stat-value" id="stat-remaining">0</span></div>
-  </div>
 
   <div class="game-area">
     <div class="grid-wrapper"><div id="grid"></div></div>
@@ -228,7 +217,6 @@ let levelFiles = [], curLevelIdx = -1;
 /* ───── DOM refs ───── */
 const $ = id => document.getElementById(id);
 const levelSel = $('level-select'), levelName = $('level-name');
-const statE = $('stat-empty'), statF = $('stat-filled'), statR = $('stat-remaining');
 const gridEl = $('grid'), sidebarEl = $('sidebar'), wordListEl = $('word-list');
 const hintSec = $('hint-section'), waitSec = $('wait-section');
 const placeSec = $('place-section'), doneSec = $('done-section');
@@ -316,7 +304,7 @@ function startGame() {
   levelName.textContent = levelData.level_name || '';
   buildGrid();
   renderSidebar();
-  updateStats();
+
   advanceGame();
 }
 
@@ -334,7 +322,7 @@ function advanceGame() {
     renderSidebar();
     showSection('wait');
     refreshAll();
-    updateStats();
+  
     return;
   }
 
@@ -345,7 +333,7 @@ function advanceGame() {
     displayHint();
     renderSidebar();
     refreshAll();
-    updateStats();
+  
     guessIn.value = ''; guessIn.focus();
     return;
   }
@@ -534,7 +522,7 @@ function onGridClick(r, c) {
   validStarts.clear();
   computeDead();
   refreshAll();
-  updateStats();
+
 
   // flash placed cells
   placedCells[wi].forEach(cell => {
@@ -649,25 +637,13 @@ function computeDead() {
     }
 }
 
-/* ───── stats ───── */
-function updateStats() {
-  let e = 0, f = 0;
-  for (let r = 0; r < gridH; r++)
-    for (let c = 0; c < gridW; c++) {
-      if (grid[r][c].state === 'empty') e++;
-      else if (grid[r][c].state === 'filled') f++;
-    }
-  statE.textContent = e; statF.textContent = f;
-  statR.textContent = levelData ? levelData.words.length - placed.size : 0;
-}
-
 /* ───── complete ───── */
 function showComplete() {
   gameState = 'complete';
   showSection('done');
   renderSidebar();
   refreshAll();
-  updateStats();
+
   const sec = Math.floor((Date.now() - startTime) / 1000);
   $('ov-time').textContent = Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
   $('ov-guesses').textContent = guessCount;
@@ -689,7 +665,7 @@ function onShowSolution() {
     placed.add(wi);
   }
   nextHintIdx = levelData.words.length;
-  computeDead(); refreshAll(); renderSidebar(); updateStats();
+  computeDead(); refreshAll(); renderSidebar();
   gameState = 'complete';
   showSection('done');
 }
