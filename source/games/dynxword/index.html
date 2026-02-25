@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic Crossword</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f0f2f5;
+  color: #2c3e50;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+#app { max-width: 720px; width: 100%; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 14px;
+}
+.header select {
+  padding: 8px 12px; border: 2px solid #ccc; border-radius: 8px;
+  font-size: 14px; background: #fff; cursor: pointer;
+}
+.header .level-name {
+  font-size: 20px; font-weight: 700; color: #34495e;
+}
+
+/* Stats */
+.stats {
+  display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.stat {
+  background: #fff; border-radius: 8px; padding: 6px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); font-size: 13px;
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-label { color: #7f8c8d; }
+.stat-value { font-weight: 700; color: #2c3e50; font-size: 15px; }
+.stat-warn .stat-value { color: #c0392b; }
+.stat-warn .stat-label { color: #c0392b; }
+
+/* Grid */
+.grid-wrapper {
+  display: flex; justify-content: center; margin-bottom: 20px;
+  overflow: auto; padding: 4px;
+}
+#grid {
+  display: grid; gap: 2px; background: #7f8c8d;
+  padding: 2px; border-radius: 4px;
+}
+.cell {
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; text-transform: uppercase;
+  position: relative; user-select: none;
+  transition: background-color .15s;
+}
+.cell-empty { background: #fff; }
+.cell-filled { background: #d5e8f7; color: #2c3e50; }
+.cell-dead {
+  background: repeating-linear-gradient(45deg,#ddd,#ddd 4px,#c0c0c0 4px,#c0c0c0 8px);
+}
+.cell-preview-valid { background: #fff9c4; cursor: pointer; }
+.cell-preview-start {
+  background: #ffd54f; cursor: pointer;
+  animation: pulse 1s ease-in-out infinite;
+}
+.cell-preview-invalid { background: #ffcdd2; cursor: not-allowed; }
+.cell-valid-start { box-shadow: inset 0 0 0 3px #ffc107; }
+.cell .num {
+  position: absolute; top: 2px; left: 3px;
+  font-size: 9px; font-weight: 600; color: #555; line-height: 1;
+}
+@keyframes pulse {
+  0%,100% { background-color: #ffd54f; }
+  50% { background-color: #ffb300; }
+}
+@keyframes flash {
+  0% { background-color: #81c784; }
+  100% { background-color: #d5e8f7; }
+}
+.cell-flash { animation: flash .5s ease-out forwards; }
+
+/* Panel */
+.panel {
+  background: #fff; border-radius: 12px; padding: 22px;
+  margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  text-align: center; min-height: 80px;
+}
+.hint-counter { font-size: 12px; color: #aaa; margin-bottom: 4px; }
+.hint-text {
+  font-size: 16px; color: #555; margin-bottom: 14px;
+  font-style: italic; line-height: 1.4;
+}
+.word-blanks {
+  font-size: 26px; letter-spacing: 10px; color: #2c3e50;
+  margin-bottom: 16px; font-family: 'Courier New', monospace;
+}
+.input-row {
+  display: flex; justify-content: center; gap: 8px;
+  align-items: center; flex-wrap: wrap;
+}
+#guess-input {
+  padding: 10px 16px; border: 2px solid #ccc; border-radius: 8px;
+  font-size: 16px; text-transform: uppercase; width: 200px;
+  text-align: center; outline: none; transition: border-color .2s;
+}
+#guess-input:focus { border-color: #4a7fe5; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-6px); }
+  40%,80% { transform: translateX(6px); }
+}
+.shake { animation: shake .4s ease-in-out; }
+
+.place-word {
+  font-size: 24px; font-weight: 700; color: #2c3e50;
+  letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px;
+}
+.place-info { font-size: 14px; color: #7f8c8d; line-height: 1.5; }
+.done-text { font-size: 18px; color: #27ae60; font-weight: 600; }
+
+/* Buttons */
+.btn {
+  padding: 10px 20px; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: #4a7fe5; color: #fff; }
+.btn-primary:hover { background: #3a6fd5; }
+.btn-outline { background: #f5f5f5; color: #555; border: 1px solid #ddd; }
+.btn-outline:hover { background: #eee; }
+.btn-skip { background: #f5f5f5; color: #888; border: 1px solid #ddd; }
+.controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+/* Overlay */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.overlay-box {
+  background: #fff; border-radius: 16px; padding: 40px 48px;
+  text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.25);
+  max-width: 360px;
+}
+.overlay-box h2 { font-size: 26px; margin-bottom: 16px; color: #27ae60; }
+.overlay-box p { font-size: 15px; color: #555; margin-bottom: 6px; }
+.overlay-box .btn { margin-top: 18px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <select id="level-select"><option value="">-- Select Level --</option></select>
+    <span class="level-name" id="level-name"></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-label">Empty</span><span class="stat-value" id="stat-empty">0</span></div>
+    <div class="stat"><span class="stat-label">Filled</span><span class="stat-value" id="stat-filled">0</span></div>
+    <div class="stat"><span class="stat-label">Remaining</span><span class="stat-value" id="stat-remaining">0</span></div>
+    <div class="stat stat-warn"><span class="stat-label">Unplaceable</span><span class="stat-value" id="stat-unplaceable">0</span></div>
+  </div>
+
+  <div class="grid-wrapper"><div id="grid"></div></div>
+
+  <div class="panel" id="game-panel">
+    <div id="hint-section">
+      <div class="hint-counter" id="hint-counter"></div>
+      <div class="hint-text" id="hint-text">Select a level to begin.</div>
+      <div class="word-blanks" id="word-blanks"></div>
+      <div class="input-row hidden" id="input-row">
+        <input id="guess-input" type="text" autocomplete="off" placeholder="Your guess...">
+        <button class="btn btn-primary" id="btn-guess">Guess</button>
+        <button class="btn btn-skip" id="btn-skip">Skip</button>
+      </div>
+    </div>
+    <div id="place-section" class="hidden">
+      <div class="place-word" id="place-word"></div>
+      <div class="place-info" id="place-info"></div>
+    </div>
+    <div id="done-section" class="hidden">
+      <div class="done-text">All words placed!</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-outline" id="btn-restart">Restart</button>
+    <button class="btn btn-outline" id="btn-solution">Show Solution</button>
+    <button class="btn btn-primary" id="btn-next">Next Level</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="overlay-box">
+    <h2>Puzzle Complete!</h2>
+    <p>Time: <span id="ov-time"></span></p>
+    <p>Guesses: <span id="ov-guesses"></span></p>
+    <button class="btn btn-primary" onclick="document.getElementById('overlay').classList.add('hidden')">OK</button>
+  </div>
+</div>
+
+<script>
+/* ───── state ───── */
+let levelData = null, gridW = 0, gridH = 0, grid = [];
+let wordQueue = [], qIdx = 0, hintIdx = 0;
+let placed = new Set(), placedCells = {};
+let unplaceable = new Set();     // word indices that have no valid grid position
+let gameState = 'idle';          // idle | hint | placing | complete
+let startTime = 0, guessCount = 0, placeNum = 0;
+let labels = {};                 // "r,c" -> number
+let previewMap = new Map();      // "r,c" -> className
+let validStarts = new Set();     // "r,c" keys of cells where current word can start
+let cellEls = [];                // flat array of cell DOM elements
+let levelFiles = [], curLevelIdx = -1;
+
+/* ───── DOM refs ───── */
+const $ = id => document.getElementById(id);
+const levelSel   = $('level-select'), levelName = $('level-name');
+const statE = $('stat-empty'), statF = $('stat-filled'), statR = $('stat-remaining'), statU = $('stat-unplaceable');
+const gridEl = $('grid');
+const hintSec = $('hint-section'), placeSec = $('place-section'), doneSec = $('done-section');
+const hintCounter = $('hint-counter'), hintText = $('hint-text');
+const wordBlanks = $('word-blanks'), inputRow = $('input-row');
+const guessIn = $('guess-input');
+const placeWord = $('place-word'), placeInfo = $('place-info');
+
+/* ───── init ───── */
+(async function init() {
+  await loadLevelList();
+  levelSel.addEventListener('change', onLevelSelect);
+  $('btn-guess').addEventListener('click', onGuess);
+  guessIn.addEventListener('keydown', e => { if (e.key === 'Enter') onGuess(); });
+  $('btn-skip').addEventListener('click', onSkip);
+  $('btn-restart').addEventListener('click', () => { if (levelData) startGame(); });
+  $('btn-solution').addEventListener('click', onShowSolution);
+  $('btn-next').addEventListener('click', onNextLevel);
+})();
+
+async function loadLevelList() {
+  try {
+    const html = await (await fetch('levels/')).text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('a').forEach(a => {
+      const h = a.getAttribute('href');
+      if (h && h.endsWith('.json')) levelFiles.push(h);
+    });
+    levelFiles.sort();
+  } catch (_) { levelFiles = ['level_1.json']; }
+  levelFiles.forEach(f => {
+    const o = document.createElement('option');
+    o.value = f; o.textContent = f.replace('.json', '');
+    levelSel.appendChild(o);
+  });
+}
+
+async function onLevelSelect() {
+  const f = levelSel.value; if (!f) return;
+  curLevelIdx = levelFiles.indexOf(f);
+  try {
+    levelData = await (await fetch('levels/' + f)).json();
+    if (!levelData.grid || !levelData.grid.placements) { alert('Level has no grid data.'); return; }
+    startGame();
+  } catch (e) { console.error(e); alert('Failed to load level.'); }
+}
+
+/* ───── game lifecycle ───── */
+function startGame() {
+  gridW = levelData.grid.width; gridH = levelData.grid.height;
+  grid = [];
+  for (let r = 0; r < gridH; r++) {
+    grid[r] = [];
+    for (let c = 0; c < gridW; c++) grid[r][c] = { letter: null, state: 'empty' };
+  }
+  placed = new Set(); placedCells = {}; placeNum = 0; labels = {};
+  unplaceable = new Set();
+  guessCount = 0; previewMap.clear(); startTime = Date.now();
+
+  wordQueue = levelData.words.map((_, i) => i);
+  shuffle(wordQueue);
+  qIdx = 0; hintIdx = 0;
+
+  levelName.textContent = levelData.level_name || '';
+  buildGrid();
+  updateStats();
+  showHint();
+}
+
+/* ───── grid DOM ───── */
+function buildGrid() {
+  gridEl.innerHTML = '';
+  gridEl.style.gridTemplateColumns = `repeat(${gridW}, 40px)`;
+  cellEls = [];
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++) {
+      const el = document.createElement('div');
+      el.className = 'cell cell-empty';
+      el.addEventListener('mouseenter', () => onHover(r, c));
+      el.addEventListener('mouseleave', clearPreview);
+      el.addEventListener('click', () => onClick(r, c));
+      gridEl.appendChild(el);
+      cellEls.push(el);
+    }
+}
+
+function cellEl(r, c) { return cellEls[r * gridW + c]; }
+
+function refreshCell(r, c) {
+  const el = cellEl(r, c), key = r + ',' + c;
+  const prev = previewMap.get(key);
+  el.className = 'cell';
+  el.classList.add(prev || ('cell-' + grid[r][c].state));
+  if (validStarts.has(key)) el.classList.add('cell-valid-start');
+  el.innerHTML = '';
+  if (labels[key]) {
+    const s = document.createElement('span');
+    s.className = 'num'; s.textContent = labels[key]; el.appendChild(s);
+  }
+  if (grid[r][c].letter) {
+    const s = document.createElement('span');
+    s.textContent = grid[r][c].letter.toUpperCase(); el.appendChild(s);
+  }
+}
+
+function refreshAll() {
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++) refreshCell(r, c);
+}
+
+/* ───── placeability check ───── */
+function canBePlaced(wi) {
+  const wd = levelData.words[wi], pl = getPlacement(wi);
+  if (!pl) return false;
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++)
+      if (isValid(r, c, wd.word, pl.direction)) return true;
+  return false;
+}
+
+function recomputeUnplaceable() {
+  unplaceable = new Set();
+  for (let i = 0; i < levelData.words.length; i++) {
+    if (placed.has(i)) continue;
+    if (!canBePlaced(i)) unplaceable.add(i);
+  }
+}
+
+/* ───── hint / guess ───── */
+function showHint() {
+  // recompute which words can't be placed
+  recomputeUnplaceable();
+  updateStats();
+
+  // skip placed words still in queue
+  while (qIdx < wordQueue.length && placed.has(wordQueue[qIdx])) qIdx++;
+  if (qIdx >= wordQueue.length) { showComplete(); return; }
+
+  // skip unplaceable words — push them to back, detect stuck
+  const remaining = levelData.words.length - placed.size;
+  let skipped = 0;
+  while (qIdx < wordQueue.length && skipped <= remaining) {
+    if (placed.has(wordQueue[qIdx])) { qIdx++; continue; }
+    if (!unplaceable.has(wordQueue[qIdx])) break;
+    wordQueue.push(wordQueue[qIdx]);
+    qIdx++;
+    skipped++;
+  }
+
+  // all remaining words are unplaceable — stuck
+  if (skipped > remaining || qIdx >= wordQueue.length) {
+    gameState = 'complete';
+    hide(hintSec); hide(placeSec); show(doneSec);
+    doneSec.querySelector('.done-text').textContent =
+      unplaceable.size + ' word(s) cannot be placed. Use Show Solution or Restart.';
+    return;
+  }
+
+  gameState = 'hint'; hintIdx = 0;
+  if (validStarts.size) { validStarts.clear(); refreshAll(); }
+  show(hintSec); hide(placeSec); hide(doneSec); inputRow.classList.remove('hidden');
+  displayHint();
+  guessIn.value = ''; guessIn.focus();
+}
+
+function displayHint() {
+  const wd = levelData.words[wordQueue[qIdx]];
+  const hints = wd.hints && wd.hints.length ? wd.hints : [wd.definition];
+  hintCounter.textContent = 'Hint ' + (hintIdx + 1);
+  hintText.textContent = hints[hintIdx % hints.length];
+  wordBlanks.textContent = '_ '.repeat(wd.length).trim();
+}
+
+function onGuess() {
+  if (gameState !== 'hint') return;
+  const guess = guessIn.value.trim().toLowerCase(); if (!guess) return;
+  guessCount++;
+  const wd = levelData.words[wordQueue[qIdx]];
+  if (guess === wd.word.toLowerCase()) {
+    enterPlacing();
+  } else {
+    guessIn.classList.add('shake');
+    setTimeout(() => guessIn.classList.remove('shake'), 400);
+    hintIdx++;
+    displayHint();
+    guessIn.value = ''; guessIn.focus();
+  }
+}
+
+function onSkip() {
+  if (gameState !== 'hint') return;
+  wordQueue.push(wordQueue[qIdx]);
+  qIdx++;
+  showHint();
+}
+
+/* ───── placing ───── */
+function enterPlacing() {
+  gameState = 'placing';
+  const wd = levelData.words[wordQueue[qIdx]];
+  const pl = getPlacement(wordQueue[qIdx]);
+  hide(hintSec); show(placeSec); hide(doneSec);
+  placeWord.textContent = wd.word;
+  const arrow = pl && pl.direction === 'horizontal' ? '→' : '↓';
+  placeInfo.textContent = `Click a golden-bordered cell to place.  Direction: ${arrow} ${pl ? pl.direction : ''}  (${wd.length} letters)`;
+
+  // highlight all valid starting cells
+  validStarts = new Set();
+  if (pl) {
+    for (let r = 0; r < gridH; r++)
+      for (let c = 0; c < gridW; c++)
+        if (isValid(r, c, wd.word, pl.direction)) validStarts.add(r + ',' + c);
+  }
+  refreshAll();
+}
+
+function getPlacement(wi) {
+  return levelData.grid.placements.find(p => p.word_index === wi) ||
+         levelData.grid.placements.find(p => p.word.toLowerCase() === levelData.words[wi].word.toLowerCase());
+}
+
+/* ───── hover / click ───── */
+function onHover(r, c) {
+  if (gameState !== 'placing') return;
+  if (grid[r][c].state === 'dead') { clearPreview(); return; }
+  const wi = wordQueue[qIdx], wd = levelData.words[wi], pl = getPlacement(wi);
+  if (!pl) return;
+  const cells = wordCells(r, c, wd.word, pl.direction);
+  if (!inBounds(cells)) { clearPreview(); return; }
+
+  const valid = isValid(r, c, wd.word, pl.direction);
+  const old = [...previewMap.keys()]; previewMap.clear();
+  cells.forEach((cell, i) => {
+    previewMap.set(cell.row + ',' + cell.col,
+      valid ? (i === 0 ? 'cell-preview-start' : 'cell-preview-valid') : 'cell-preview-invalid');
+  });
+  const changed = new Set([...old, ...previewMap.keys()]);
+  changed.forEach(k => { const [r, c] = k.split(',').map(Number); refreshCell(r, c); });
+}
+
+function clearPreview() {
+  const old = [...previewMap.keys()]; previewMap.clear();
+  old.forEach(k => { const [r, c] = k.split(',').map(Number); refreshCell(r, c); });
+}
+
+function onClick(r, c) {
+  if (gameState !== 'placing') return;
+  const wi = wordQueue[qIdx], wd = levelData.words[wi], pl = getPlacement(wi);
+  if (!pl) return;
+  if (!isValid(r, c, wd.word, pl.direction)) return;
+
+  doPlace(r, c, wd.word, pl.direction, wi);
+  placed.add(wi); qIdx++;
+  previewMap.clear();
+  validStarts.clear();
+  computeDead();
+  refreshAll();
+  updateStats();
+  // flash placed cells
+  placedCells[wi].forEach(cell => {
+    const el = cellEl(cell.row, cell.col);
+    el.classList.add('cell-flash');
+    setTimeout(() => el.classList.remove('cell-flash'), 500);
+  });
+  showHint();
+}
+
+function doPlace(r, c, word, dir, wi) {
+  const cells = wordCells(r, c, word, dir);
+  placedCells[wi] = cells;
+  placeNum++;
+  const startKey = r + ',' + c;
+  if (!labels[startKey]) labels[startKey] = placeNum;
+  cells.forEach(cell => {
+    grid[cell.row][cell.col].letter = cell.letter;
+    grid[cell.row][cell.col].state = 'filled';
+  });
+}
+
+/* ───── validation ───── */
+function wordCells(sr, sc, word, dir) {
+  const out = [];
+  for (let i = 0; i < word.length; i++) {
+    out.push({
+      row: dir === 'vertical' ? sr + i : sr,
+      col: dir === 'horizontal' ? sc + i : sc,
+      letter: word[i]
+    });
+  }
+  return out;
+}
+
+function inBounds(cells) {
+  return cells.every(c => c.row >= 0 && c.row < gridH && c.col >= 0 && c.col < gridW);
+}
+
+function isValid(sr, sc, word, dir) {
+  const cells = wordCells(sr, sc, word, dir);
+  if (!inBounds(cells)) return false;
+
+  // letter conflicts
+  for (const c of cells)
+    if (grid[c.row][c.col].letter && grid[c.row][c.col].letter !== c.letter) return false;
+
+  // boundary: cell before / after must be empty
+  if (dir === 'horizontal') {
+    if (sc > 0 && grid[sr][sc - 1].letter) return false;
+    const ec = sc + word.length;
+    if (ec < gridW && grid[sr][ec].letter) return false;
+  } else {
+    if (sr > 0 && grid[sr - 1][sc].letter) return false;
+    const er = sr + word.length;
+    if (er < gridH && grid[er][sc].letter) return false;
+  }
+
+  // perpendicular adjacency: new-letter cells must not touch existing letters in the perpendicular direction
+  for (const c of cells) {
+    if (grid[c.row][c.col].letter === c.letter) continue; // intersection OK
+    if (dir === 'horizontal') {
+      if (c.row > 0 && grid[c.row - 1][c.col].letter) return false;
+      if (c.row < gridH - 1 && grid[c.row + 1][c.col].letter) return false;
+    } else {
+      if (c.col > 0 && grid[c.row][c.col - 1].letter) return false;
+      if (c.col < gridW - 1 && grid[c.row][c.col + 1].letter) return false;
+    }
+  }
+
+  return true;
+}
+
+/* ───── dead tiles ───── */
+function computeDead() {
+  if (placed.size === 0) return;
+  // collect every cell reachable by ANY valid placement of remaining words
+  const reach = new Set();
+  for (let i = 0; i < levelData.words.length; i++) {
+    if (placed.has(i)) continue;
+    const wd = levelData.words[i], pl = getPlacement(i);
+    if (!pl) continue;
+    for (let r = 0; r < gridH; r++)
+      for (let c = 0; c < gridW; c++)
+        if (isValid(r, c, wd.word, pl.direction))
+          wordCells(r, c, wd.word, pl.direction).forEach(
+            cell => reach.add(cell.row + ',' + cell.col));
+  }
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++) {
+      if (grid[r][c].state === 'filled') continue;
+      grid[r][c].state = reach.has(r + ',' + c) ? 'empty' : 'dead';
+    }
+}
+
+/* ───── stats ───── */
+function updateStats() {
+  let e = 0, f = 0;
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++) {
+      if (grid[r][c].state === 'empty') e++;
+      else if (grid[r][c].state === 'filled') f++;
+    }
+  statE.textContent = e; statF.textContent = f;
+  statR.textContent = levelData ? levelData.words.length - placed.size : 0;
+  statU.textContent = unplaceable.size;
+}
+
+/* ───── complete ───── */
+function showComplete() {
+  gameState = 'complete';
+  hide(hintSec); hide(placeSec); show(doneSec);
+  const sec = Math.floor((Date.now() - startTime) / 1000);
+  $('ov-time').textContent = Math.floor(sec / 60) + 'm ' + (sec % 60) + 's';
+  $('ov-guesses').textContent = guessCount;
+  $('overlay').classList.remove('hidden');
+}
+
+/* ───── controls ───── */
+function onShowSolution() {
+  if (!levelData) return;
+  // reset grid
+  for (let r = 0; r < gridH; r++)
+    for (let c = 0; c < gridW; c++) grid[r][c] = { letter: null, state: 'empty' };
+  placed = new Set(); placedCells = {}; placeNum = 0; labels = {};
+  for (const pl of levelData.grid.placements) {
+    doPlace(pl.row, pl.col, levelData.words[pl.word_index].word, pl.direction, pl.word_index);
+    placed.add(pl.word_index);
+  }
+  computeDead(); refreshAll(); updateStats();
+  gameState = 'complete';
+  hide(hintSec); hide(placeSec); show(doneSec);
+}
+
+function onNextLevel() {
+  if (!levelFiles.length) return;
+  curLevelIdx = (curLevelIdx + 1) % levelFiles.length;
+  levelSel.value = levelFiles[curLevelIdx];
+  onLevelSelect();
+}
+
+/* ───── util ───── */
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+}
+function show(el) { el.classList.remove('hidden'); }
+function hide(el) { el.classList.add('hidden'); }
+</script>
+</body>
+</html>
