@@ -328,6 +328,8 @@ function advanceGame() {
     recomputeUnplaceable();
     const placeable = unplacedFound.filter(wi => !unplaceable.has(wi));
     if (placeable.length === 1) {
+      renderSidebar();
+      refreshAll();
       selectWord(placeable[0]);
     } else {
       renderSidebar();
