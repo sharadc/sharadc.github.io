@@ -166,6 +166,7 @@ body {
       <div class="input-row hidden" id="input-row">
         <input id="guess-input" type="text" autocomplete="off" placeholder="Your guess...">
         <button class="btn btn-primary" id="btn-guess">Guess</button>
+        <button class="btn btn-outline hidden" id="btn-grok">Grok</button>
       </div>
     </div>
     <div id="wait-section" class="hidden">
@@ -206,6 +207,7 @@ let unplaceable = new Set();     // found-but-unplaced words with no valid posit
 let selectedWi = null;           // word index selected from sidebar for placing
 let nextHintIdx = 0;             // sequential index into words[] for next hint
 let hintIdx = 0;                 // which sub-hint for current word
+let wrongGuesses = 0;            // wrong guesses for current word
 let gameState = 'idle';          // idle | hint | sidebar | complete
 let startTime = 0, guessCount = 0, placeNum = 0;
 let labels = {};
@@ -230,6 +232,7 @@ const placeWordEl = $('place-word'), placeInfo = $('place-info');
   await loadLevelList();
   levelSel.addEventListener('change', onLevelSelect);
   $('btn-guess').addEventListener('click', onGuess);
+  $('btn-grok').addEventListener('click', onGrok);
   guessIn.addEventListener('keydown', e => { if (e.key === 'Enter') onGuess(); });
 $('btn-restart').addEventListener('click', () => { if (levelData) startGame(); });
   $('btn-solution').addEventListener('click', onShowSolution);
@@ -328,8 +331,9 @@ function advanceGame() {
 
   // more words to hint? → hint mode
   if (nextHintIdx < levelData.words.length) {
-    gameState = 'hint'; hintIdx = 0;
+    gameState = 'hint'; hintIdx = 0; wrongGuesses = 0;
     showSection('hint');
+    $('btn-grok').classList.add('hidden');
     displayHint();
     renderSidebar();
     refreshAll();
@@ -438,9 +442,18 @@ function onGuess() {
     guessIn.classList.add('shake');
     setTimeout(() => guessIn.classList.remove('shake'), 400);
     hintIdx++;
+    wrongGuesses++;
+    if (wrongGuesses >= 3) $('btn-grok').classList.remove('hidden');
     displayHint();
     guessIn.value = ''; guessIn.focus();
   }
+}
+
+function onGrok() {
+  if (gameState !== 'hint') return;
+  found.add(nextHintIdx);
+  nextHintIdx++;
+  advanceGame();
 }
 
 /* ───── grid DOM ───── */
