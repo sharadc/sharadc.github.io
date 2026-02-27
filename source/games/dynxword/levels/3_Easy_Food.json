@@ -1,0 +1,130 @@
+{
+  "level_name": "3_Easy_Food",
+  "category": "food",
+  "subcategory": null,
+  "min_length": 1,
+  "max_length": 7,
+  "difficulty": "easy",
+  "starts_with": null,
+  "word_count": 6,
+  "words": [
+    {
+      "id": 1837,
+      "word": "cheese",
+      "length": 6,
+      "frequency": 25222,
+      "definition": "a solid food prepared from the pressed curd of milk",
+      "part_of_speech": "noun",
+      "hints": [
+        "Milk aged to perfection"
+      ]
+    },
+    {
+      "id": 2980,
+      "word": "mix",
+      "length": 3,
+      "frequency": 13418,
+      "definition": "a commercially prepared mixture of dry ingredients",
+      "part_of_speech": "noun",
+      "hints": [
+        "Pre-packaged blend for quick baking"
+      ]
+    },
+    {
+      "id": 2985,
+      "word": "butter",
+      "length": 6,
+      "frequency": 13398,
+      "definition": "an edible emulsion of fat globules made by churning milk or cream; for cooking and table use",
+      "part_of_speech": "noun",
+      "hints": [
+        "Golden glaze on toast"
+      ]
+    },
+    {
+      "id": 3782,
+      "word": "bitter",
+      "length": 6,
+      "frequency": 9785,
+      "definition": "English term for a dry sharp-tasting ale with strong flavor of hops (usually on draft)",
+      "part_of_speech": "noun",
+      "hints": [
+        "Hops add flavor to this English ale"
+      ]
+    },
+    {
+      "id": 4487,
+      "word": "burger",
+      "length": 6,
+      "frequency": 7924,
+      "definition": "United States jurist appointed chief justice of the United States Supreme Court by Richard Nixon (1907-1995)",
+      "part_of_speech": "noun",
+      "hints": [
+        "Patty in a bun"
+      ]
+    },
+    {
+      "id": 4488,
+      "word": "dough",
+      "length": 5,
+      "frequency": 7923,
+      "definition": "a flour mixture stiff enough to knead or roll",
+      "part_of_speech": "noun",
+      "hints": [
+        "Pastry maker's first step"
+      ]
+    }
+  ],
+  "hints_model": "llama3.2:3b",
+  "hints_per_word": 3,
+  "grid": {
+    "width": 7,
+    "height": 6,
+    "words_placed": 6,
+    "total_letters": 26,
+    "placements": [
+      {
+        "word": "bitter",
+        "word_index": 3,
+        "row": 3,
+        "col": 0,
+        "direction": "horizontal"
+      },
+      {
+        "word": "cheese",
+        "word_index": 0,
+        "row": 0,
+        "col": 4,
+        "direction": "vertical"
+      },
+      {
+        "word": "burger",
+        "word_index": 4,
+        "row": 5,
+        "col": 0,
+        "direction": "horizontal"
+      },
+      {
+        "word": "butter",
+        "word_index": 2,
+        "row": 0,
+        "col": 2,
+        "direction": "vertical"
+      },
+      {
+        "word": "dough",
+        "word_index": 5,
+        "row": 1,
+        "col": 0,
+        "direction": "horizontal"
+      },
+      {
+        "word": "mix",
+        "word_index": 1,
+        "row": 0,
+        "col": 6,
+        "direction": "vertical"
+      }
+    ]
+  }
+}
