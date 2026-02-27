@@ -326,10 +326,14 @@ function advanceGame() {
   if (unplacedFound.length > 0) {
     gameState = 'sidebar';
     recomputeUnplaceable();
-    renderSidebar();
-    showSection('wait');
-    refreshAll();
-  
+    const placeable = unplacedFound.filter(wi => !unplaceable.has(wi));
+    if (placeable.length === 1) {
+      selectWord(placeable[0]);
+    } else {
+      renderSidebar();
+      showSection('wait');
+      refreshAll();
+    }
     return;
   }
 
