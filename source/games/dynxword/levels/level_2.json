@@ -1,0 +1,130 @@
+{
+  "level_name": "easy_colors",
+  "category": "color",
+  "subcategory": null,
+  "min_length": 1,
+  "max_length": 6,
+  "difficulty": "easy",
+  "starts_with": null,
+  "word_count": 6,
+  "words": [
+    {
+      "id": 584,
+      "word": "red",
+      "length": 3,
+      "frequency": 106589,
+      "definition": "red color or pigment; the chromatic color resembling the hue of blood",
+      "part_of_speech": "noun",
+      "hints": [
+        "Passion and danger"
+      ]
+    },
+    {
+      "id": 1584,
+      "word": "brown",
+      "length": 5,
+      "frequency": 30395,
+      "definition": "an orange of low brightness and saturation",
+      "part_of_speech": "noun",
+      "hints": [
+        "Chocolate and coffee"
+      ]
+    },
+    {
+      "id": 2924,
+      "word": "orange",
+      "length": 6,
+      "frequency": 13738,
+      "definition": "round yellow to orange fruit of any of several citrus trees",
+      "part_of_speech": "noun",
+      "hints": [
+        "Sunsets and clementines"
+      ]
+    },
+    {
+      "id": 3879,
+      "word": "blonde",
+      "length": 6,
+      "frequency": 9536,
+      "definition": "a person with fair skin and hair",
+      "part_of_speech": "noun",
+      "hints": [
+        "Golden locks and sun-kissed complexion"
+      ]
+    },
+    {
+      "id": 4115,
+      "word": "amber",
+      "length": 5,
+      "frequency": 8866,
+      "definition": "a deep yellow color",
+      "part_of_speech": "noun",
+      "hints": [
+        "Fossilized tree resin - honey-like hue"
+      ]
+    },
+    {
+      "id": 4198,
+      "word": "rose",
+      "length": 5,
+      "frequency": 8627,
+      "definition": "any of many shrubs of the genus Rosa that bear roses",
+      "part_of_speech": "noun",
+      "hints": [
+        "love, passion and flower"
+      ]
+    }
+  ],
+  "grid": {
+    "width": 6,
+    "height": 6,
+    "words_placed": 6,
+    "total_letters": 23,
+    "placements": [
+      {
+        "word": "orange",
+        "word_index": 2,
+        "row": 3,
+        "col": 0,
+        "direction": "horizontal"
+      },
+      {
+        "word": "blonde",
+        "word_index": 3,
+        "row": 0,
+        "col": 3,
+        "direction": "vertical"
+      },
+      {
+        "word": "amber",
+        "word_index": 4,
+        "row": 0,
+        "col": 1,
+        "direction": "horizontal"
+      },
+      {
+        "word": "brown",
+        "word_index": 1,
+        "row": 1,
+        "col": 0,
+        "direction": "vertical"
+      },
+      {
+        "word": "red",
+        "word_index": 0,
+        "row": 5,
+        "col": 2,
+        "direction": "horizontal"
+      },
+      {
+        "word": "rose",
+        "word_index": 5,
+        "row": 0,
+        "col": 5,
+        "direction": "vertical"
+      }
+    ]
+  },
+  "hints_model": "llama3.2:3b",
+  "hints_per_word": 3
+}
