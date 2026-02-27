@@ -231,6 +231,10 @@ const placeWordEl = $('place-word'), placeInfo = $('place-info');
 (async function init() {
   await loadLevelList();
   levelSel.addEventListener('change', onLevelSelect);
+  if (levelFiles.length) {
+    levelSel.value = levelFiles[levelFiles.length - 1];
+    onLevelSelect();
+  }
   $('btn-guess').addEventListener('click', onGuess);
   $('btn-grok').addEventListener('click', onGrok);
   guessIn.addEventListener('keydown', e => { if (e.key === 'Enter') onGuess(); });
