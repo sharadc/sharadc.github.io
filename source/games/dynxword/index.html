@@ -245,7 +245,7 @@ $('btn-restart').addEventListener('click', () => { if (levelData) startGame(); }
   // click outside grid + sidebar → deselect
   document.addEventListener('click', e => {
     if (selectedWi === null) return;
-    if (gridEl.contains(e.target) || sidebarEl.contains(e.target)) return;
+    if (gridEl.contains(e.target) || sidebarEl.contains(e.target) || $('game-panel').contains(e.target)) return;
     deselectWord();
   });
 })();
