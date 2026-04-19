@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crossroads</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <h1>Crossroads</h1>
+    <div id="status">
+      <span id="day-indicator">Day —/—</span>
+      <span id="phase-indicator"></span>
+      <a id="rules-link" href="rules.html" target="_blank" rel="noopener">Rules</a>
+    </div>
+  </header>
+
+  <main id="playarea">
+    <section id="players">
+      <div class="seat" id="seat-0">
+        <span class="seat-name">P1</span>
+        <span class="seat-coin">$0</span>
+      </div>
+      <div class="seat" id="seat-1">
+        <span class="seat-name">P2</span>
+        <span class="seat-coin">$0</span>
+      </div>
+    </section>
+
+    <section id="board-wrap">
+      <div id="board">
+        <!-- filled by JS: 4 edge-capacity bars + 4×4 grid -->
+      </div>
+    </section>
+  </main>
+
+  <aside id="wizard">
+    <div id="wizard-steps">
+      <div class="step" data-step="buy">1. Buy</div>
+      <div class="step" data-step="build">2. Build</div>
+      <div class="step" data-step="sales">3. Sales</div>
+    </div>
+    <div id="wizard-title">Crossroads</div>
+    <div id="wizard-body"></div>
+    <div id="wizard-piles"></div>
+    <div id="wizard-actions"></div>
+  </aside>
+
+  <template id="setup-template">
+    <div class="setup">
+      <label>Mode
+        <select id="mode-select">
+          <option value="human_vs_ai" selected>Human vs AI</option>
+          <option value="ai_vs_ai">AI vs AI</option>
+        </select>
+      </label>
+      <label id="p0-label">P1 strategy
+        <select id="p0-select">
+          <option value="double_tier">double_tier</option>
+          <option value="three_type">three_type</option>
+          <option value="greedy_expensive">greedy_expensive</option>
+          <option value="triple_tier">triple_tier</option>
+          <option value="two_type">two_type</option>
+          <option value="mid_curve">mid_curve</option>
+        </select>
+      </label>
+      <label>P2 strategy
+        <select id="p1-select">
+          <option value="double_tier">double_tier</option>
+          <option value="three_type">three_type</option>
+          <option value="greedy_expensive">greedy_expensive</option>
+          <option value="triple_tier">triple_tier</option>
+          <option value="two_type">two_type</option>
+          <option value="mid_curve">mid_curve</option>
+        </select>
+      </label>
+      <button id="start-btn" class="primary">Start game</button>
+    </div>
+  </template>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
