@@ -18,11 +18,14 @@ const $ = (sel) => document.querySelector(sel);
 
 const GOODS = ["W", "E", "N", "S"];
 
+// perGood: scalar (same count for every good in combo) or dict {good: count}.
 function renderGoodsBadges(combo, perGood = null) {
   const set = new Set(combo || []);
+  const isDict = perGood !== null && typeof perGood === "object";
   return GOODS.map((g) => {
     const on = set.has(g);
-    const label = on ? String(perGood ?? 1) : "";
+    const n = isDict ? perGood[g] : perGood;
+    const label = on ? String(n ?? 1) : "";
     return `<span class="good-badge good-${g}${on ? "" : " off"}">${label}</span>`;
   }).join("");
 }
@@ -167,7 +170,7 @@ function renderBoard(s) {
       });
       if (shop) {
         cell.innerHTML = `<div class="shop-label">${shop.label}</div>
-                          <div class="goods-badges">${renderGoodsBadges(shop.combo)}</div>`;
+                          <div class="goods-badges">${renderGoodsBadges(shop.combo, shop.consumed)}</div>`;
       }
     }
     addCell("cap-cell cap-E", String(cap.east[n - 1 - r]));
