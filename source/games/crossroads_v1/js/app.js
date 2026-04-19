@@ -210,8 +210,7 @@ function renderPiles(s) {
       const selectable = !depleted && (selected || p.cost <= remaining);
       if (selectable) d.classList.add("selectable");
       d.innerHTML = `
-        <div class="plabel"><span>${p.label}</span><span class="pcount">${p.count}</span></div>
-        <div class="pmeta">$${p.cost}</div>
+        <div class="plabel"><span>${p.label}</span><span class="pmeta">$${p.cost}</span></div>
       `;
       if (selectable) d.addEventListener("click", () => toggleBuy(key, p.cost));
       rowInner.appendChild(d);
