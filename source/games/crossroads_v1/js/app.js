@@ -69,7 +69,6 @@ function showSetup() {
 function render(s) {
   state.current = s;
   $("#day-indicator").textContent = `Day ${s.day}/${s.days}`;
-  $("#phase-indicator").textContent = describePhase(s);
   for (let pid = 0; pid < 2; pid++) {
     const seat = $(`#seat-${pid}`);
     const sData = s.seats[pid];
