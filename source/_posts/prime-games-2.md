@@ -4,6 +4,13 @@ date: 2026-07-02 18:20:27
 tags: primes
 mathjax: true
 ---
+<style>
+r { color: Red }
+o { color: Orange }
+g { color: Green }
+b { color: Blue}
+y { color: Yellow}
+</style>
 
 # Prime Games II: Real Multiplications
 
@@ -564,6 +571,13 @@ $$
 
 It can also be written as a matrix monoid. Then multiplication is ordinary matrix multiplication.
 
+---
+
+## 10. Standalone Script
+
+[Standalone Python script](/scripts/prime-games-2.py)
+
+---
 ## References
 [^1]: Wolfram MathWorld, “Monoid.” https://mathworld.wolfram.com/Monoid.html
 [^2]: Alfred Geroldinger and Qinghai Zhong, “Factorization theory in commutative monoids,” *Semigroup Forum* 2020. https://link.springer.com/article/10.1007/s00233-019-10079-0

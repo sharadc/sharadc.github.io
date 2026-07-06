@@ -4,6 +4,13 @@ date: 2026-07-01 18:21:47
 tags: primes
 mathjax: true
 ---
+<style>
+r { color: Red }
+o { color: Orange }
+g { color: Green }
+b { color: Blue}
+y { color: Yellow}
+</style>
 
 # Prime Games I: Generators, Multipliers, and Distributions
 
@@ -507,115 +514,9 @@ Some rough patterns from the simulations:
 
 ---
 
-## 7. A compact simulator
+## 7. Standalone Script
 
-Here is a reusable Python simulator for symmetric, monotone index multipliers.
-
-```python
-import math
-
-
-def ceil_sqrt(n: int) -> int:
-    """Return ceil(sqrt(n)) for positive integers."""
-    if n <= 0:
-        raise ValueError("ceil_sqrt expects a positive integer")
-    return math.isqrt(n - 1) + 1
-
-
-def game_prime_indices(N, mu):
-    """
-    Return game-prime indices from 1 through N.
-
-    Assumptions:
-    - mu(i, j) is symmetric, so we only test i <= j.
-    - for fixed i, mu(i, j) is nondecreasing in j, so we can break once mu > N.
-    """
-    composite = [False] * (N + 1)
-
-    for i in range(1, N + 1):
-        for j in range(i, N + 1):
-            k = mu(i, j)
-            if k > N:
-                break
-            composite[k] = True
-
-    return [n for n in range(1, N + 1) if not composite[n]]
-
-
-def game_primes(N, value, mu):
-    """Return pairs (index, value) for game-primes through index N."""
-    return [(n, value(n)) for n in game_prime_indices(N, mu)]
-```
-
-Ordinary numbers:
-
-```python
-ordinary_value = lambda n: n + 1
-ordinary_mu = lambda i, j: i * j + i + j
-
-print(game_primes(50, ordinary_value, ordinary_mu))
-```
-
-Odd numbers:
-
-```python
-odd_value = lambda n: 2 * n + 1
-odd_mu = lambda i, j: 2 * i * j + i + j
-
-print(game_primes(50, odd_value, odd_mu))
-```
-
-The general $qn+1$ game:
-
-```python
-def qn1_value(q):
-    return lambda n: q * n + 1
-
-
-def qn1_mu(q):
-    return lambda i, j: q * i * j + i + j
-
-
-q = 4
-print(game_primes(100, qn1_value(q), qn1_mu(q)))
-```
-
-Squares:
-
-```python
-square_value = lambda n: (n + 1) ** 2
-square_mu = lambda i, j: i * j + i + j
-
-print(game_primes(50, square_value, square_mu))
-```
-
-Powers of two:
-
-```python
-power_value = lambda n: 2 ** n
-power_mu = lambda i, j: i + j
-
-print(game_primes(50, power_value, power_mu))
-```
-
-Artificial multiplier rules:
-
-```python
-rules = {
-    "additive": lambda i, j: i + j,
-    "shifted_additive": lambda i, j: i + j + 1,
-    "sqrt_sum_surcharge": lambda i, j: i + j + ceil_sqrt(i + j),
-    "log_sum_surcharge": lambda i, j: i + j + math.ceil(math.log2(i + j)),
-    "sqrt_product_surcharge": lambda i, j: i + j + ceil_sqrt(i * j),
-    "log_product_surcharge": lambda i, j: i + j + math.ceil(math.log2(i * j + 1)),
-    "max_sqrt_product_jump": lambda i, j: max(i, j) + ceil_sqrt(i * j),
-    "max_log_product_jump": lambda i, j: max(i, j) + math.ceil(math.log2(i * j + 1)),
-}
-
-for name, mu in rules.items():
-    primes = game_prime_indices(10_000, mu)
-    print(name, len(primes), primes[:12])
-```
+[Standalone Python script](/scripts/prime-games-1.py)
 
 ---
 
