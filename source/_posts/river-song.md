@@ -1,7 +1,7 @@
 ---
 title: River Song
 date: 2025-06-06 22:24:27
-tags: Shorts
+tags: short
 ---
 
 There are two lands that weave the river, and in between them flows its song.
